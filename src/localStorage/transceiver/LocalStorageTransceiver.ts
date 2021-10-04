@@ -1,5 +1,6 @@
 import { BaseTransceiver, SignalOption, TransceiverHandler } from "../../core";
 import { walkArray } from "../../utils/commonUtil";
+import LocalStorageSignal from "./LocalStorageSignal";
 enum Status {
   close = 0,
   open = 1,
@@ -9,19 +10,48 @@ export class LocalStorageTransceiver extends BaseTransceiver {
   status: Status = Status.close;
   handlers: Array<TransceiverHandler> = [];
   context: Window = window;
-  filter: Filter | null = null;
+  keyPrefix = "";
+  filter: Filter | undefined = undefined;
   constructor(option: CreateLocalStorageTransceiverOption) {
     super();
     this.context = option.win;
     this.filter = option.filter;
+    if (option.keyPrefix) {
+      this.keyPrefix = option.keyPrefix;
+    }
   }
-  messageHandler(event: Event) {
-    if (this.filter && this.filter(event)) {
-      walkArray<TransceiverHandler>(this.handlers, (handler) => {});
+  isValidName(eventName: string) {
+    if (
+      !this.keyPrefix ||
+      (eventName && eventName.indexOf(this.keyPrefix) === 0)
+    ) {
+      return true;
+    }
+    return false;
+  }
+  messageHandler(event: StorageEvent) {
+    const eventName = event.key as string;
+    if (this.isValidName(eventName)) {
+      if (this.filter && this.filter(event)) {
+        const data = this.context.localStorage.getItem(eventName);
+        const signal = LocalStorageSignal.deserialize(eventName, data);
+        walkArray<TransceiverHandler>(this.handlers, (handler) => {
+          handler.onMessage(signal);
+        });
+        this.context.localStorage.removeItem(eventName);
+      }
     }
   }
   send(eventName: string, data?: unknown, option?: SignalOption) {
+    const name = this.getEventName(eventName);
+    this.context.localStorage.setItem(
+      name,
+      new LocalStorageSignal(eventName, data, option).serialize()
+    );
     return this;
+  }
+  getEventName(eventName: string) {
+    return this.keyPrefix + eventName;
   }
   start() {
     if (this.status === Status.close) {
@@ -59,11 +89,20 @@ export class LocalStorageTransceiver extends BaseTransceiver {
   checkStatus(): boolean {
     return !!this.context;
   }
+  readHistoryMessage() {
+    let storage = this.context.localStorage;
+    for (let key in storage) {
+      const event = new StorageEvent("history");
+      event.initStorageEvent(key);
+      this.messageHandler(event);
+    }
+  }
 }
 
 export interface CreateLocalStorageTransceiverOption {
   win: Window;
-  filter: Filter;
+  filter?: Filter;
+  keyPrefix?: string;
 }
 export default function createWindowTransceiver(
   option: CreateLocalStorageTransceiverOption

@@ -7,7 +7,7 @@ export type ServiceCallBack = (resolve: (value: unknown) => void) => void;
 /**
  *
  * 返回 模拟的 Broswer/Server 模式 的请求。
- * 请求标识：eventName
+ * 请求标识：eventName 即http请求中的请求路径
  * set: 设置响应的处理函数（调用resolve 发送处理结果）/或固定的值
  * get：发起请求 获取set 设置的数据
  * on: 接收 set 主动推送的数据变化
