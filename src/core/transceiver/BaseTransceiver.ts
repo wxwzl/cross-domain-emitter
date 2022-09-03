@@ -18,7 +18,7 @@ export interface SignalOption {
   local?: boolean;
   transceiver?: BaseTransceiver; //会在收发器接收到消息时由收发器额外添加
   emitter?: EventBus;
-  Event?: Event; //会在收发器接收到消息时由收发器额外添加
+  event?: Event; //会在收发器接收到消息时由收发器额外添加
 }
 export interface Signal {
   name: string;
