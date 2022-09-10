@@ -1,5 +1,5 @@
 {
-    "name": "cross-carrier-emitter",
+    "name": "cross-domain-emitter",
     "version": "0.0.1",
     "description": "a cross domain or carrier event emittier",
     "main": "dist/index.min.js",
@@ -12,6 +12,7 @@
       "format": "npx prettier --write .",
       "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
       "test": "pnpm run build && npx jest",
+      "test:server": "cd ./tests/webserver && pnpm i && pnpm run dev",
       "prepublish": "pnpm run build"
     },
     "keywords": [

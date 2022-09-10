@@ -6,7 +6,7 @@ import dts from "rollup-plugin-dts";
 import { terser } from "rollup-plugin-terser"; //压缩js代码，包括es6代码压缩,供 Rollup 处理
 import alias from "@rollup/plugin-alias"; // 别名的解析
 import nodePolyfills from "rollup-plugin-node-polyfills"; //解决第三方依赖引入问题。
-import packageJSON from "./package1.json";
+import packageJSON from "./package.json";
 import path from "path";
 import fs from "fs";
 const getPath = (_path) => path.resolve(__dirname, _path);

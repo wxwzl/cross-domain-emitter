@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+
+<head>
+  <meta charset="utf-8" />
+  <title>cross-domain-emitter</title>
+  <style>
+    html,
+    body,
+    div,
+    iframe {
+      margin: 0 0;
+      padding: 0 0;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body style="height: 100%; padding: 20px 20px">
+  <script src="/host.js"></script>
+  <div style="vertical-align: top; margin-bottom: 20px">
+    <button id="addBtn">给iframe发送消息</button>
+    <input id="text" />
+    <label>选择要发送消息的iframe：</label>
+    <div id="target" style="padding:20px 10px">
+    </div>
+    <br />
+    <br />
+    <div>
+      <button id="addSite">往末尾添加一个iframe</button>
+      <label>iframe类型:</label>
+      <label>A</label>
+      <input type="radio" name="appType" value="A" checked="true" />
+      <label>B</label>
+      <input type="radio" name="appType" value="B" />
+      <label>C</label>
+      <input type="radio" name="appType" value="C" />
+      <br />
+      <br />
+      <button id="removeSite">从最后移除一个iframe</button>
+    </div>
+  </div>
+  <div id="container" style="
+        display: inline-block;
+        width: 24%;
+        height: 500px;
+        border: 1px solid #ddd;
+        vertical-align: top;
+      "></div>
+  <script src="/dist/index.min.umd.js"></script>
+  <script>
+    var hostMap = {
+      A: `http://localhost:5001`,
+      B: `http://${host}:5001`,
+      C: `http://${host}:5002`,
+    };
+    var siteMap = {
+      A: `${hostMap.A}/iframeA.html`,
+      B: `${hostMap.B}/iframeB.html`,
+      C: `${hostMap.C}/iframeC.html`,
+    };
+    var iframes = [];
+    const server = new CrossDomainEmitter.WindowServer("uuid");
+
+    function findIframeBytransceiver(transceiver) {
+      return iframes.find((iframe) => {
+        if (iframe.id === transceiver.id) {
+          return true;
+        }
+      });
+    }
+
+    function changeSite(iframe, transceiver, site) {
+      server.changeIframeTransceiver(transceiver, {
+        iframe: iframe,
+        host: hostMap[site] ? hostMap[site] : site,
+        url: siteMap[site],
+      });
+    }
+    const gotoHandler = (data, option) => {
+      const transceiver = option.transceiver;
+      let iframe = findIframeBytransceiver(transceiver);
+      if (iframe) {
+        switch (data) {
+          case "A":
+            changeSite(iframe, transceiver, "A");
+            break;
+          case "B":
+            changeSite(iframe, transceiver, "B");
+            break;
+          case "C":
+            changeSite(iframe, transceiver, "C");
+            break;
+        }
+      }
+
+    };
+  </script>
+  <script>
+    function createIframe(url) {
+      const node = document.createElement("iframe");
+      node.src = url;
+      node.width = "24%";
+      node.height = "500";
+      document.body.appendChild(node);
+      return node;
+    }
+
+    function createAndBindEvent(site, iframeId) {
+      const iframe = createIframe(siteMap[site]);
+      const transceiver = server.addIframeTransceiver({
+        iframe: iframe,
+        host: hostMap[site],
+        url: siteMap[site],
+      });
+      iframes.push(iframe);
+      const id = iframeId ? iframeId : site;
+      iframe.id = id;
+      transceiver.setId(id);
+      iframe.onload = () => {
+        console.log("iframe加载完毕");
+        transceiver.start();
+      };
+      iframe.onerror = (e) => {
+        console.error("iframe加载失败");
+      };
+      return transceiver;
+    }
+
+    function createCheckBox(id) {
+      const label = document.createElement("label")
+      label.innerHTML = "iframe" + id;
+      const node = document.createElement("input");
+      node.value = id;
+      node.type = "checkbox";
+      node.name = "type";
+      node.style="margin:10px 10px;"
+      target.appendChild(label);
+      target.appendChild(node);
+    }
+
+    function getAppTypeValue() {
+      let nodes = document.getElementsByName("appType");
+      let len = nodes.length;
+      for (let i = 0; i < len; i++) {
+        if (nodes[i].checked) {
+          return nodes[i].value;
+        }
+      }
+    }
+    let index = 0;
+    addSite.addEventListener("click", () => {
+      const type = getAppTypeValue();
+      const id = "" + (index++);
+      createAndBindEvent(type, id);
+      createCheckBox(id);
+    });
+    removeSite.addEventListener("click", () => {
+      const iframe = iframes.pop();
+      iframe.parentNode.removeChild(iframe);
+    });
+
+    function getTypeValue() {
+      let nodes = document.getElementsByName("type");
+      let len = nodes.length;
+      let target = [];
+      for (let i = 0; i < len; i++) {
+        if (nodes[i].checked) {
+          target.push(nodes[i].value);
+        }
+      }
+      return target;
+    }
+    addBtn.addEventListener("click", () => {
+      const value = getTypeValue();
+      const transceivers = server.findWindowTransceiverByWindowIds(value);
+      server.emit(
+        "message",
+        `${text.value}--${value}`, {
+          local: false,
+        },
+        transceivers
+      );
+
+    });
+    server.on("message", (data, option) => {
+      const node = document.createElement("p");
+      node.innerHTML = data;
+      container.appendChild(node);
+    });
+  </script>
+</body>
+
+</html>
