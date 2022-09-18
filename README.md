@@ -11,3 +11,8 @@ or
 npm i cross-domain-emitter -S
 
 `
+## examples
+
+![alt demo](./demo.gif)
+ 
+ demo code in tests.

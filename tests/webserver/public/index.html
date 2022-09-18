@@ -17,6 +17,7 @@
 </head>
 
 <body style="height: 100%; padding: 20px 20px">
+  <h3>请用5003端口</h3>
   <script src="/host.js"></script>
   <div style="vertical-align: top; margin-bottom: 20px">
     <button id="addBtn">给iframe发送消息</button>
@@ -156,6 +157,9 @@
     removeSite.addEventListener("click", () => {
       const iframe = iframes.pop();
       iframe.parentNode.removeChild(iframe);
+      const childs = target.childNodes;
+      target.removeChild(childs[childs.length-1])
+      target.removeChild(childs[childs.length-1])
     });
 
     function getTypeValue() {
