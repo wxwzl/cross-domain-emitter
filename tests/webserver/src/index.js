@@ -21,7 +21,4 @@ app.listen(5002, ipStr, () => {
 app.listen(5003, ipStr, () => {
   console.log(`Example app listening at http://${ipStr}:5003`);
 });
-writeFileSync(
-  path.join(__dirname, "../public/host.js"),
-  `var host='${ipStr}';`
-);
+writeFileSync(path.join(__dirname, "../public/host.js"), `var host='${ipStr}';`);

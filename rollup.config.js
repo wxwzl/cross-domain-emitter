@@ -1,4 +1,4 @@
-import resolve from "rollup-plugin-node-resolve"; //—帮助 Rollup 查找外部模块，然后导入
+import { nodeResolve as resolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs"; // —将CommonJS模块转换为 ES2015 供 Rollup 处理
 import json from "@rollup/plugin-json"; // 可以将json文件以es6 模块的方式导入引用
 import ts from "@rollup/plugin-typescript"; // 解析ts文件转成js,供 Rollup 处理

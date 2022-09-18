@@ -26,11 +26,7 @@ export default class LocalStorageSignal implements Signal {
       return new LocalStorageSignal(name);
     }
   }
-  static copyFrom(data: {
-    name: string;
-    data?: unknown;
-    option?: SignalOption;
-  }) {
+  static copyFrom(data: { name: string; data?: unknown; option?: SignalOption }) {
     return new LocalStorageSignal(data.name, data.data, data.option);
   }
 }

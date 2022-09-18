@@ -1,9 +1,7 @@
 import { walkArray } from "src/utils/commonUtil";
 import EventBus from "../../core/EventBus";
 import Store from "../../core/store";
-import BaseTransceiver, {
-  TransceiverHandler,
-} from "../../core/transceiver/BaseTransceiver";
+import BaseTransceiver, { TransceiverHandler } from "../../core/transceiver/BaseTransceiver";
 import createWindowTransceiver, {
   createWindowTransceiverOption,
   WindowTransceiver,
@@ -62,7 +60,7 @@ export default class WindowEventBus extends EventBus {
     }
   }
   findWindowTransceiverByWindowIds(ids: Array<string>) {
-    let targets: Array<BaseTransceiver> = [];
+    const targets: Array<BaseTransceiver> = [];
     walkArray(ids, (id) => {
       const target = this.transceivers.find((transceiver) => {
         if ((transceiver as WindowTransceiver).id === id) {

@@ -20,10 +20,7 @@ export class WindowServer extends WindowEventBus {
     return transceiver;
   }
 
-  changeIframeTransceiver(
-    transceiver: WindowTransceiver,
-    option: AddIframeTransceiverOption
-  ) {
+  changeIframeTransceiver(transceiver: WindowTransceiver, option: AddIframeTransceiverOption) {
     const url = this.addUUIDtoUrl(option.url, transceiver.getUUID());
     option.iframe.src = url;
     transceiver.changeOption({
@@ -43,7 +40,7 @@ export class WindowServer extends WindowEventBus {
     if (url.indexOf("?") < 0) {
       url = url + "?";
     }
-    const uuidParmas = this.uuidKey+"=" + uuid;
+    const uuidParmas = this.uuidKey + "=" + uuid;
     if (/\?$/.test(url)) {
       url = url + uuidParmas;
     } else {

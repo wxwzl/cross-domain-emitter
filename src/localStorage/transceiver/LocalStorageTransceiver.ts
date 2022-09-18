@@ -21,10 +21,7 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     }
   }
   isValidName(eventName: string) {
-    if (
-      !this.keyPrefix ||
-      (eventName && eventName.indexOf(this.keyPrefix) === 0)
-    ) {
+    if (!this.keyPrefix || (eventName && eventName.indexOf(this.keyPrefix) === 0)) {
       return true;
     }
     return false;
@@ -90,8 +87,8 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     return !!this.context;
   }
   readHistoryMessage() {
-    let storage = this.context.localStorage;
-    for (let key in storage) {
+    const storage = this.context.localStorage;
+    for (const key in storage) {
       const event = new StorageEvent("history");
       event.initStorageEvent(key);
       this.messageHandler(event);
@@ -104,8 +101,6 @@ export interface CreateLocalStorageTransceiverOption {
   filter?: Filter;
   keyPrefix?: string;
 }
-export default function createWindowTransceiver(
-  option: CreateLocalStorageTransceiverOption
-) {
+export default function createWindowTransceiver(option: CreateLocalStorageTransceiverOption) {
   return new LocalStorageTransceiver(option);
 }

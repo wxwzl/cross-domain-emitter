@@ -1,8 +1,8 @@
 
-function render() {
+function render(text) {
   const node = document.createElement("p");
   node.innerHTML = text;
-  container.appendChild(node);
+  iframeContainer.appendChild(node);
 }
 const client = new CrossDomainEmitter.WindowClient("uuid");
 
@@ -27,6 +27,9 @@ if (isInSubApp()) {
       console.log(error);
       return;
     }
+    client.emit("message",window.location.href+": 我连接上啦。",{
+      local: false
+    })
   });
 } else if (isInMainApp()) {}
 client.on("message", (data) => {
@@ -36,4 +39,13 @@ addButton.addEventListener("click", () => {
   client.emit("message", text.value, {
     local: false
   });
+});
+toASite.addEventListener("click", () => {
+  client.emit("goto","A");
+});
+toBSite.addEventListener("click", () => {
+  client.emit("goto","B");
+});
+toCSite.addEventListener("click", () => {
+  client.emit("goto","C");
 });

@@ -5,12 +5,7 @@ export default class WindowSignal implements Signal {
   name = "";
   data: any = null;
   option!: SignalOption;
-  constructor(
-    uuid: string,
-    name: string,
-    data: unknown,
-    option?: SignalOption
-  ) {
+  constructor(uuid: string, name: string, data: unknown, option?: SignalOption) {
     this._uuid = uuid;
     this.name = name;
     this.data = data;
@@ -30,12 +25,7 @@ export default class WindowSignal implements Signal {
       return null;
     }
   }
-  static copyFrom(data: {
-    _uuid: string;
-    name: string;
-    data?: unknown;
-    option?: SignalOption;
-  }) {
+  static copyFrom(data: { _uuid: string; name: string; data?: unknown; option?: SignalOption }) {
     return new WindowSignal(data._uuid, data.name, data.data, data.option);
   }
 }

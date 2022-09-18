@@ -1,11 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import {
-  WindowClient,
-  createVirtualService,
-  Store,
-} from "../src/index";
+import { WindowClient, createVirtualService, Store } from "../src/index";
 jest.setTimeout(500000);
 
 test("store", () => {

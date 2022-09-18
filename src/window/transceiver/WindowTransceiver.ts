@@ -45,10 +45,7 @@ export class WindowTransceiver extends BaseTransceiver {
       this.stop();
       return;
     }
-    if (
-      (this.allowHost && this.allowHost.includes(event.origin)) ||
-      this.host === event.origin
-    ) {
+    if ((this.allowHost && this.allowHost.includes(event.origin)) || this.host === event.origin) {
       let signal: null | WindowSignal = null;
       if (isString(event.data)) {
         signal = WindowSignal.deserialize(event.data);
@@ -84,10 +81,7 @@ export class WindowTransceiver extends BaseTransceiver {
       return this;
     }
     if ((window as any).structuredClone != undefined) {
-      this.context.postMessage(
-        new WindowSignal(this._uuid, eventName, data, option),
-        this.host
-      );
+      this.context.postMessage(new WindowSignal(this._uuid, eventName, data, option), this.host);
     } else {
       this.context.postMessage(
         new WindowSignal(this._uuid, eventName, data, option).serialize(),
@@ -206,8 +200,6 @@ export interface createWindowTransceiverOption {
   host: string;
   allowHost?: Array<string>;
 }
-export default function createWindowTransceiver(
-  option: createWindowTransceiverOption
-) {
+export default function createWindowTransceiver(option: createWindowTransceiverOption) {
   return new WindowTransceiver(option);
 }

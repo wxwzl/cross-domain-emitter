@@ -21,6 +21,7 @@
   <div style="vertical-align: top; margin-bottom: 20px">
     <button id="addBtn">给iframe发送消息</button>
     <input id="text" />
+    <br>
     <label>选择要发送消息的iframe：</label>
     <div id="target" style="padding:20px 10px">
     </div>
@@ -47,7 +48,7 @@
         border: 1px solid #ddd;
         vertical-align: top;
       "></div>
-  <script src="/dist/index.min.umd.js"></script>
+  <script src="/dist/index.js"></script>
   <script>
     var hostMap = {
       A: `http://localhost:5001`,
@@ -61,7 +62,7 @@
     };
     var iframes = [];
     const server = new CrossDomainEmitter.WindowServer("uuid");
-
+    window._mainServer=server;
     function findIframeBytransceiver(transceiver) {
       return iframes.find((iframe) => {
         if (iframe.id === transceiver.id) {
@@ -77,7 +78,7 @@
         url: siteMap[site],
       });
     }
-    const gotoHandler = (data, option) => {
+    server.on("goto",(data, option) => {
       const transceiver = option.transceiver;
       let iframe = findIframeBytransceiver(transceiver);
       if (iframe) {
@@ -94,7 +95,7 @@
         }
       }
 
-    };
+    });
   </script>
   <script>
     function createIframe(url) {
@@ -117,13 +118,10 @@
       const id = iframeId ? iframeId : site;
       iframe.id = id;
       transceiver.setId(id);
-      iframe.onload = () => {
-        console.log("iframe加载完毕");
+      iframe.onerror=()=>{};
+      iframe.onload=()=>{
         transceiver.start();
-      };
-      iframe.onerror = (e) => {
-        console.error("iframe加载失败");
-      };
+      }
       return transceiver;
     }
 
