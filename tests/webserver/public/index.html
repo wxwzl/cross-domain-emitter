@@ -118,7 +118,7 @@
       iframes.push(iframe);
       const id = iframeId ? iframeId : site;
       iframe.id = id;
-      transceiver.setId(id);
+      transceiver.id=id;
       iframe.onerror=()=>{};
       iframe.onload=()=>{
         transceiver.start();

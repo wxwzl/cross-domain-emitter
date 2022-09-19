@@ -6,22 +6,28 @@ export interface AddIframeTransceiverOption {
   host: string;
   allowHost?: Array<string>;
   url: string;
+  uuidKey?: string;
+  uuidValue?: string;
 }
 export class WindowServer extends WindowEventBus {
   addIframeTransceiver(option: AddIframeTransceiverOption) {
-    const uuid = nanoid();
-    const url = this.addUUIDtoUrl(option.url, uuid);
+    const uuidValue = option.uuidValue ? option.uuidValue : nanoid();
+    const uuidKey = option.uuidKey ? option.uuidKey : this.uuidKey;
+    const url = this.addUUIDtoUrl(option.url, uuidKey, uuidValue);
     option.iframe.src = url;
     const transceiver = this.addWindowTransceiver({
       win: option.iframe.contentWindow as Window,
       ...option,
     });
-    transceiver.setUUID(uuid);
+    transceiver.setUUID(uuidValue);
+    transceiver.setUUIDKey(uuidKey);
     return transceiver;
   }
 
   changeIframeTransceiver(transceiver: WindowTransceiver, option: AddIframeTransceiverOption) {
-    const url = this.addUUIDtoUrl(option.url, transceiver.getUUID());
+    const uuidValue = option.uuidValue ? option.uuidValue : transceiver.getUUID();
+    const uuidKey = option.uuidKey ? option.uuidKey : transceiver.getUUIDKey();
+    const url = this.addUUIDtoUrl(option.url, uuidKey, uuidValue);
     option.iframe.src = url;
     transceiver.changeOption({
       win: option.iframe.contentWindow as Window,
@@ -36,11 +42,11 @@ export class WindowServer extends WindowEventBus {
       this.removeWindowTransceiverByWindow(iframe.contentWindow);
     }
   }
-  addUUIDtoUrl(url: string, uuid: string) {
+  addUUIDtoUrl(url: string, uuidKey: string, uuidValue: string) {
     if (url.indexOf("?") < 0) {
       url = url + "?";
     }
-    const uuidParmas = this.uuidKey + "=" + uuid;
+    const uuidParmas = uuidKey + "=" + uuidValue;
     if (/\?$/.test(url)) {
       url = url + uuidParmas;
     } else {

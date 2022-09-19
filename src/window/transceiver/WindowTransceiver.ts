@@ -24,7 +24,8 @@ export class WindowTransceiver extends BaseTransceiver {
   host = "";
   allowHost: Array<string> | undefined = [];
   id = "";
-  private _uuid = "";
+  private uuidKey = "";
+  private uuidValue = "";
   maxRetryTimes = 3;
   private retryTimes = -1;
   reconnectInterval = 500;
@@ -52,7 +53,7 @@ export class WindowTransceiver extends BaseTransceiver {
       } else if (isObject(event.data) && event.data.name) {
         signal = WindowSignal.copyFrom(event.data);
       }
-      if (isObject<WindowSignal>(signal) && signal._uuid === this._uuid) {
+      if (isObject<WindowSignal>(signal) && signal._uuid === this.uuidValue) {
         if (signal.name === "connect") {
           this.send("connected");
           return;
@@ -73,18 +74,21 @@ export class WindowTransceiver extends BaseTransceiver {
     }
   }
   send(eventName: string, data?: unknown, option?: SignalOption) {
-    if (!this._uuid) {
-      this.connectError = new Error("_uuid is empty.");
+    if (!this.uuidValue) {
+      this.connectError = new Error("uuidValue is empty.");
       return this;
     }
     if (this.status === Status.close) {
       return this;
     }
     if ((window as any).structuredClone != undefined) {
-      this.context.postMessage(new WindowSignal(this._uuid, eventName, data, option), this.host);
+      this.context.postMessage(
+        new WindowSignal(this.uuidValue, eventName, data, option),
+        this.host
+      );
     } else {
       this.context.postMessage(
-        new WindowSignal(this._uuid, eventName, data, option).serialize(),
+        new WindowSignal(this.uuidValue, eventName, data, option).serialize(),
         this.host
       );
     }
@@ -131,14 +135,17 @@ export class WindowTransceiver extends BaseTransceiver {
     }
     return false;
   }
-  setId(str: string) {
-    this.id = str;
-  }
   setUUID(str: string) {
-    this._uuid = str;
+    this.uuidValue = str;
   }
   getUUID() {
-    return this._uuid;
+    return this.uuidValue;
+  }
+  setUUIDKey(str: string) {
+    this.uuidKey = str;
+  }
+  getUUIDKey() {
+    return this.uuidKey;
   }
   changeOption(option: createWindowTransceiverOption) {
     this.context = option.win;
