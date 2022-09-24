@@ -9,7 +9,7 @@ export default class EventBus extends EventEmitter {
     eventName: string,
     data?: unknown,
     option?: SignalOption,
-    transceivers?: BaseTransceiver | Array<BaseTransceiver>
+    transceivers?: BaseTransceiver | EventBus | Array<BaseTransceiver | EventBus>
   ) {
     if (!option || option.local !== false) {
       super.emit(eventName, data, option);
@@ -17,29 +17,50 @@ export default class EventBus extends EventEmitter {
 
     if (transceivers) {
       if (isArray(transceivers)) {
-        walkArray<BaseTransceiver>(transceivers as Array<BaseTransceiver>, (handler) => {
-          if (handler && handler.checkStatus()) {
-            handler.send(eventName, data, option);
+        walkArray<BaseTransceiver | EventBus>(
+          transceivers as Array<BaseTransceiver | EventBus>,
+          (handler) => {
+            if (handler instanceof BaseTransceiver) {
+              if (handler && handler.checkStatus()) {
+                handler.send(eventName, data, option);
+              }
+            } else if (handler instanceof EventBus) {
+              handler.onMessage({
+                data: data,
+                name: eventName,
+                option: option,
+              });
+            }
           }
-        });
+        );
       } else {
-        if ((transceivers as BaseTransceiver).checkStatus()) {
-          (transceivers as BaseTransceiver).send(eventName, data, option);
+        if (transceivers instanceof BaseTransceiver) {
+          if (transceivers.checkStatus()) {
+            transceivers.send(eventName, data, option);
+          }
+        } else if (transceivers instanceof EventBus) {
+          transceivers.onMessage({
+            data: data,
+            name: eventName,
+            option: option,
+          });
         }
       }
       return this;
     }
-    this.emitters.forEach((emitter) => {
-      emitter.onMessage({ data: data, name: eventName, option: option });
-    });
-    const defaultTransceivers = this.transceivers;
-    for (let i = 0; i < defaultTransceivers.length; i++) {
-      const handler = defaultTransceivers[i];
-      if (handler && handler.checkStatus()) {
-        handler.send(eventName, data, option);
-      } else {
-        defaultTransceivers.splice(i, 1);
-        i--;
+    if (!option || option.local !== true) {
+      this.emitters.forEach((emitter) => {
+        emitter.onMessage({ data: data, name: eventName, option: option });
+      });
+      const defaultTransceivers = this.transceivers;
+      for (let i = 0; i < defaultTransceivers.length; i++) {
+        const handler = defaultTransceivers[i];
+        if (handler && handler.checkStatus()) {
+          handler.send(eventName, data, option);
+        } else {
+          defaultTransceivers.splice(i, 1);
+          i--;
+        }
       }
     }
     return this;
