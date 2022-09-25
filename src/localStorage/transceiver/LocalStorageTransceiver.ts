@@ -12,6 +12,7 @@ export class LocalStorageTransceiver extends BaseTransceiver {
   context: Window = window;
   keyPrefix = "";
   filter: Filter | undefined = undefined;
+  uuid = "";
   constructor(option: CreateLocalStorageTransceiverOption) {
     super();
     this.context = option.win;
@@ -19,6 +20,7 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     if (option.keyPrefix) {
       this.keyPrefix = option.keyPrefix;
     }
+    this.uuid = new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
   }
   isValidName(eventName: string) {
     if (!this.keyPrefix || (eventName && eventName.indexOf(this.keyPrefix) === 0)) {
@@ -26,25 +28,33 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     }
     return false;
   }
+  getRealName(name: string) {
+    return name.replace(this.keyPrefix, "");
+  }
   messageHandler(event: StorageEvent) {
+    console.log("event:", event);
     const eventName = event.key as string;
+    const data = this.context.localStorage.getItem(eventName);
+    if (!data) {
+      return;
+    }
     if (this.isValidName(eventName)) {
-      if (this.filter && this.filter(event)) {
-        const data = this.context.localStorage.getItem(eventName);
-        const signal = LocalStorageSignal.deserialize(eventName, data);
-        walkArray<TransceiverHandler>(this.handlers, (handler) => {
-          handler.onMessage(signal);
-        });
-        this.context.localStorage.removeItem(eventName);
+      const realName = this.getRealName(eventName);
+      const signal = LocalStorageSignal.deserialize(realName, data);
+      if (signal.uuid !== this.uuid) {
+        if (!this.filter || this.filter(event)) {
+          walkArray<TransceiverHandler>(this.handlers, (handler) => {
+            handler.onMessage(signal);
+          });
+          this.context.localStorage.removeItem(eventName);
+        }
       }
     }
   }
   send(eventName: string, data?: unknown, option?: SignalOption) {
     const name = this.getEventName(eventName);
-    this.context.localStorage.setItem(
-      name,
-      new LocalStorageSignal(eventName, data, option).serialize()
-    );
+    const str = new LocalStorageSignal(this.uuid, eventName, data, option).serialize();
+    this.context.localStorage.setItem(name, str);
     return this;
   }
   getEventName(eventName: string) {
@@ -101,6 +111,6 @@ export interface CreateLocalStorageTransceiverOption {
   filter?: Filter;
   keyPrefix?: string;
 }
-export default function createWindowTransceiver(option: CreateLocalStorageTransceiverOption) {
+export function createLocalStorageTransceiver(option: CreateLocalStorageTransceiverOption) {
   return new LocalStorageTransceiver(option);
 }

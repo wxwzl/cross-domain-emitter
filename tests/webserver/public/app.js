@@ -1,4 +1,3 @@
-
 function render(text) {
   const node = document.createElement("p");
   node.innerHTML = text;
@@ -11,6 +10,13 @@ function isInSubApp() {
     return false;
   }
   return true;
+}
+
+function changeMode(server, client) {
+  server.addEmitter(client);
+  server.store.addEmitter(client.store);
+  client.addEmitter(server);
+  client.store.addEmitter(server.store);
 }
 
 function isInMainApp() {
@@ -27,11 +33,15 @@ if (isInSubApp()) {
       console.log(error);
       return;
     }
-    client.emit("message",window.location.href+": 我连接上啦。",{
+    client.emit("message", window.location.href + ": 我连接上啦。", {
       local: false
     })
   });
-} else if (isInMainApp()) {}
+} else if (isInMainApp()) {
+  changeMode(window._mainServer,client);
+}else{
+  
+}
 client.on("message", (data) => {
   render(data);
 });
@@ -41,11 +51,11 @@ addButton.addEventListener("click", () => {
   });
 });
 toASite.addEventListener("click", () => {
-  client.emit("goto","A");
+  client.emit("goto", "A");
 });
 toBSite.addEventListener("click", () => {
-  client.emit("goto","B");
+  client.emit("goto", "B");
 });
 toCSite.addEventListener("click", () => {
-  client.emit("goto","C");
+  client.emit("goto", "C");
 });

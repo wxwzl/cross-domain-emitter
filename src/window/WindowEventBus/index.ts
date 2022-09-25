@@ -1,3 +1,4 @@
+import { hingeJointTransceiver, unHingeJointTransceiver } from "src/core/utils";
 import { walkArray } from "src/utils/commonUtil";
 import EventBus from "../../core/EventBus";
 import Store from "../../core/store";
@@ -6,25 +7,7 @@ import createWindowTransceiver, {
   createWindowTransceiverOption,
   WindowTransceiver,
 } from "../transceiver/WindowTransceiver";
-function hingeJointTransceiver(
-  transceiver: BaseTransceiver,
-  transceiverHandler: TransceiverHandler & {
-    bindTransceiver: (transceiver: BaseTransceiver) => void;
-  }
-) {
-  transceiver.addHandler(transceiverHandler);
-  transceiverHandler.bindTransceiver(transceiver);
-}
 
-function unHingeJointTransceiver(
-  transceiver: BaseTransceiver,
-  transceiverHandler: TransceiverHandler & {
-    unBindTransceiver: (transceiver: BaseTransceiver) => void;
-  }
-) {
-  transceiver.removeHandler(transceiverHandler);
-  transceiverHandler.unBindTransceiver(transceiver);
-}
 export default class WindowEventBus extends EventBus {
   protected uuidKey = "";
   store = new Store();

@@ -93,7 +93,16 @@ export default class EventBus extends EventEmitter {
     super.emit(data.name, data.data, data.option);
   }
   addEmitter(emiter: EventBus) {
-    this.emitters.push(emiter);
+    let flag = true;
+    walkArray(this.emitters, (target, index) => {
+      if (target === emiter) {
+        flag = false;
+        return true;
+      }
+    });
+    if (flag) {
+      this.emitters.push(emiter);
+    }
   }
   removeEmitter(emiter: EventBus) {
     walkArray(this.emitters, (target, index) => {
