@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { WindowClient, createVirtualService, Store } from "../src/index";
+import { WindowClient, createVirtualService, Store } from "../dist/index";
 jest.setTimeout(500000);
 
 test("store", () => {
@@ -37,10 +37,10 @@ test("createVirtualService", () => {
     return resolve(1);
   });
   let target;
-  data.get().then((res) => {
+  data.get().then((res: unknown) => {
     target = res;
+    expect(target).toStrictEqual(1);
   });
-  expect(target).toStrictEqual(1);
   const CallFunction = jest.fn();
   data.on((data) => {
     expect(data.newVal).toStrictEqual(2);

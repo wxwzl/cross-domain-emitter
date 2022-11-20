@@ -1,4 +1,4 @@
-import { isObject, isString, walkArray } from "../../utils/commonUtil";
+import { isFunction, isObject, isString, walkArray } from "../../utils/commonUtil";
 import BaseTransceiver, {
   SignalOption,
   TransceiverHandler,
@@ -39,7 +39,11 @@ export class WindowTransceiver extends BaseTransceiver {
     this.context = option.win;
     this.host = option.host;
     this.allowHost = option.allowHost;
-    this.id = nanoid();
+    this.id = option.idGenerator
+      ? isFunction(option.idGenerator)
+        ? option.idGenerator()
+        : option.idGenerator
+      : nanoid();
   }
   messageHandler(event: Event & { origin: string; data: any }) {
     if (!this.checkStatus()) {
@@ -206,6 +210,7 @@ export interface createWindowTransceiverOption {
   win: Window;
   host: string;
   allowHost?: Array<string>;
+  idGenerator?: Function | string;
 }
 export default function createWindowTransceiver(option: createWindowTransceiverOption) {
   return new WindowTransceiver(option);

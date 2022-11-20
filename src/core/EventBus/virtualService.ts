@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { SignalOption } from "../transceiver/BaseTransceiver";
 import { isFunction } from "../../utils/commonUtil";
-import EventBus from ".";
+import EventBus from "./index";
 export type ServiceCallBack = (resolve: (value: unknown) => void) => void;
 
 /**
@@ -20,7 +20,6 @@ export type ServiceCallBack = (resolve: (value: unknown) => void) => void;
  */
 export function createVirtualService(instance: EventBus, eventName: string) {
   const reqEvent = eventName + "_req";
-  const resEvent = eventName + "_res";
   const updateEvent = eventName + "_update";
   let lastData: unknown = null;
   const returnEvents = new Set<string>();
@@ -75,7 +74,6 @@ export function createVirtualService(instance: EventBus, eventName: string) {
       returnEvents.forEach((eventName) => {
         instance.off(eventName);
       });
-      instance.off(resEvent);
       instance.off(reqEvent);
       instance.off(updateEvent);
     },
