@@ -41,7 +41,7 @@ server.on("message",(data)=>{
 })
 const transceiver = server.addIframeTransceiver({
     iframe: iframe,
-    host: 'http://iframe.com',
+    host: 'http://iframe.com',//或者*
     url: 'pageUrl',
 });
 
@@ -57,7 +57,7 @@ import { WindowClient } from "cross-domain-emitter";
 
 const client = new WindowClient("uuid");
 
-const transceiver = client.createIframeTransceiver(`http://main.com`);
+const transceiver = client.createIframeTransceiver(`http://main.com||"*"`);
 transceiver.start();
 transceiver.onConnected((error) => {
     if (error) {

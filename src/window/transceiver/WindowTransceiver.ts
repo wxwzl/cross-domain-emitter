@@ -50,7 +50,11 @@ export class WindowTransceiver extends BaseTransceiver {
       this.stop();
       return;
     }
-    if ((this.allowHost && this.allowHost.includes(event.origin)) || this.host === event.origin) {
+    if (
+      (this.allowHost && this.allowHost.includes(event.origin)) ||
+      this.host === event.origin ||
+      this.host === "*"
+    ) {
       let signal: null | WindowSignal = null;
       if (isString(event.data)) {
         signal = WindowSignal.deserialize(event.data);
