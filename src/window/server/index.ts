@@ -5,7 +5,7 @@ export interface AddIframeTransceiverOption {
   iframe: HTMLIFrameElement;
   host: string;
   allowHost?: Array<string>;
-  url: string;
+  url?: string;
   uuidKey?: string;
   uuidValue?: string;
 }
