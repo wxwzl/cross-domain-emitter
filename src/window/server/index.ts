@@ -13,8 +13,11 @@ export class WindowServer extends WindowEventBus {
   addIframeTransceiver(option: AddIframeTransceiverOption) {
     const uuidValue = option.uuidValue ? option.uuidValue : nanoid();
     const uuidKey = option.uuidKey ? option.uuidKey : this.uuidKey;
-    const url = this.addUUIDtoUrl(option.url, uuidKey, uuidValue);
-    option.iframe.src = url;
+    if (option.url) {
+      const url = this.addUUIDtoUrl(option.url, uuidKey, uuidValue);
+      option.iframe.src = url;
+    }
+
     const transceiver = this.addWindowTransceiver({
       win: option.iframe.contentWindow as Window,
       ...option,
@@ -27,8 +30,11 @@ export class WindowServer extends WindowEventBus {
   changeIframeTransceiver(transceiver: WindowTransceiver, option: AddIframeTransceiverOption) {
     const uuidValue = option.uuidValue ? option.uuidValue : transceiver.getUUID();
     const uuidKey = option.uuidKey ? option.uuidKey : transceiver.getUUIDKey();
-    const url = this.addUUIDtoUrl(option.url, uuidKey, uuidValue);
-    option.iframe.src = url;
+    if (option.url) {
+      const url = this.addUUIDtoUrl(option.url, uuidKey, uuidValue);
+      option.iframe.src = url;
+    }
+
     transceiver.changeOption({
       win: option.iframe.contentWindow as Window,
       host: option.host,
