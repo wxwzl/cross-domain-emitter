@@ -1,8 +1,13 @@
 /**
  * @jest-environment jsdom
  */
-import { WindowClient, createVirtualService, Store } from "../dist/index";
+import { WindowClient, createVirtualService, Store, SignalOption } from "../dist/index";
 jest.setTimeout(500000);
+jest.mock("nanoid", () => ({
+  nanoid: () => {
+    return new Date().getTime();
+  },
+}));
 
 test("store", () => {
   const CallFunction = jest.fn();
@@ -33,7 +38,7 @@ test("store", () => {
 test("createVirtualService", () => {
   const server = new WindowClient("__u_u_i_d");
   const data = createVirtualService(server, "data");
-  data.set((resolve: (value: unknown) => void) => {
+  data.set((data: unknown, option: SignalOption, resolve: (value: unknown) => void) => {
     return resolve(1);
   });
   let target;
@@ -42,7 +47,7 @@ test("createVirtualService", () => {
     expect(target).toStrictEqual(1);
   });
   const CallFunction = jest.fn();
-  data.on((data) => {
+  data.on((data: { newVal: unknown; oldVal?: unknown }) => {
     expect(data.newVal).toStrictEqual(2);
     expect(data.oldVal).toStrictEqual(1);
     CallFunction();

@@ -2,7 +2,11 @@ import { nanoid } from "nanoid";
 import { SignalOption } from "../transceiver/BaseTransceiver";
 import { isFunction } from "../../utils/commonUtil";
 import EventBus from "./index";
-export type ServiceCallBack = (resolve: (value: unknown) => void) => void;
+export type ServiceCallBack = (
+  data: unknown,
+  option: SignalOption | undefined,
+  resolve: (value: unknown) => void
+) => void;
 
 /**
  *
@@ -46,7 +50,7 @@ export function createVirtualService(instance: EventBus, eventName: string) {
         }
         if (isFunction(callBack)) {
           new Promise((resolve) => {
-            (callBack as ServiceCallBack)(resolve);
+            (callBack as ServiceCallBack)(data, option, resolve);
           }).then((data) => {
             instance.emit(targetEvent, data);
           });
@@ -55,7 +59,7 @@ export function createVirtualService(instance: EventBus, eventName: string) {
         }
       });
       if (isFunction(callBack)) {
-        (callBack as ServiceCallBack)((data) => {
+        (callBack as ServiceCallBack)(undefined, undefined, (data) => {
           instance.emit(updateEvent, { newVal: data, oldVal: lastData });
           lastData = data;
         });

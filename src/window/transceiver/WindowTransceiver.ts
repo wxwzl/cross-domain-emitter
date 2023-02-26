@@ -96,7 +96,11 @@ export class WindowTransceiver extends BaseTransceiver {
       );
     } else {
       this.context.postMessage(
-        new WindowSignal(this.uuidValue, eventName, data, option).serialize(),
+        new WindowSignal(this.uuidValue, eventName, data, {
+          ...option,
+          transceiver: undefined,
+          event: undefined,
+        }).serialize(),
         this.host
       );
     }

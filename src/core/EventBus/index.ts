@@ -1,8 +1,10 @@
 import BaseTransceiver, { Signal, SignalOption } from "../transceiver/BaseTransceiver";
 import { isArray, walkArray } from "../../utils/commonUtil";
 import EventEmitter from "@wxwzl/eventemitter";
+import { nanoid } from "nanoid";
 
 export default class EventBus extends EventEmitter {
+  id = nanoid();
   transceivers: Array<BaseTransceiver> = [];
   emitters: Array<EventBus> = [];
   emit(
@@ -14,7 +16,12 @@ export default class EventBus extends EventEmitter {
     if (!option || option.local !== false) {
       super.emit(eventName, data, option);
     }
-
+    if (!option) {
+      option = {};
+    }
+    if (!option.emitterId) {
+      option.emitterId = this.id;
+    }
     if (transceivers) {
       if (isArray(transceivers)) {
         walkArray<BaseTransceiver | EventBus>(
