@@ -13,15 +13,20 @@ export default class EventBus extends EventEmitter {
     option?: SignalOption,
     transceivers?: BaseTransceiver | EventBus | Array<BaseTransceiver | EventBus>
   ) {
-    if (!option || option.local !== false) {
-      super.emit(eventName, data, option);
-    }
     if (!option) {
       option = {};
     }
     if (!option.emitterId) {
       option.emitterId = this.id;
     }
+    if (!option || option.local === true) {
+      super.emit(eventName, data, option);
+      return this;
+    }
+    if (!option || option.local !== false) {
+      super.emit(eventName, data, option);
+    }
+
     if (transceivers) {
       if (isArray(transceivers)) {
         walkArray<BaseTransceiver | EventBus>(
@@ -55,19 +60,17 @@ export default class EventBus extends EventEmitter {
       }
       return this;
     }
-    if (!option || option.local !== true) {
-      this.emitters.forEach((emitter) => {
-        emitter.onMessage({ data: data, name: eventName, option: option });
-      });
-      const defaultTransceivers = this.transceivers;
-      for (let i = 0; i < defaultTransceivers.length; i++) {
-        const handler = defaultTransceivers[i];
-        if (handler && handler.checkStatus()) {
-          handler.send(eventName, data, option);
-        } else {
-          defaultTransceivers.splice(i, 1);
-          i--;
-        }
+    this.emitters.forEach((emitter) => {
+      emitter.onMessage({ data: data, name: eventName, option: option });
+    });
+    const defaultTransceivers = this.transceivers;
+    for (let i = 0; i < defaultTransceivers.length; i++) {
+      const handler = defaultTransceivers[i];
+      if (handler && handler.checkStatus()) {
+        handler.send(eventName, data, option);
+      } else {
+        defaultTransceivers.splice(i, 1);
+        i--;
       }
     }
     return this;
