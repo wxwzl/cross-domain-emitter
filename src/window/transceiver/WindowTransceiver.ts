@@ -31,7 +31,7 @@ export class WindowTransceiver extends BaseTransceiver {
   reconnectInterval = 500;
   private timeOutId: NodeJS.Timer | null = null;
   connectError: Error | undefined = undefined;
-
+  private _messageHandlerWrap: null | EventListenerOrEventListenerObject = null;
   private connectedCall: Array<(error?: Error) => void> = [];
 
   constructor(option: createWindowTransceiverOption) {
@@ -109,14 +109,23 @@ export class WindowTransceiver extends BaseTransceiver {
   start() {
     if (this.status === Status.close || this.status === Status.error) {
       this.status = Status.connecting;
-      window.addEventListener("message", this.messageHandler.bind(this));
+      this._messageHandlerWrap = this.messageHandler.bind(
+        this
+      ) as EventListenerOrEventListenerObject;
+      window.addEventListener(
+        "message",
+        this._messageHandlerWrap as EventListenerOrEventListenerObject,
+        false
+      );
       this.connect();
     }
   }
   stop() {
     this.status = Status.close;
     this.resetProperties();
-    window.removeEventListener("message", this.messageHandler.bind(this));
+    if (this._messageHandlerWrap) {
+      window.removeEventListener("message", this._messageHandlerWrap, false);
+    }
   }
   clearHandler() {
     this.handlers = [];
