@@ -142,7 +142,7 @@ export class WindowTransceiver extends BaseTransceiver {
     });
   }
   checkStatus() {
-    if (this.context) {
+    if (this.context && this.context.parent) {
       return true;
     }
     return false;

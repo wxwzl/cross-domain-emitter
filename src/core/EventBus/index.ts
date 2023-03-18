@@ -69,6 +69,9 @@ export default class EventBus extends EventEmitter {
       if (handler && handler.checkStatus()) {
         handler.send(eventName, data, option);
       } else {
+        if (handler && handler.stop) {
+          handler.stop();
+        }
         defaultTransceivers.splice(i, 1);
         i--;
       }
