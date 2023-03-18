@@ -11,7 +11,7 @@ import createWindowTransceiver, {
 export default class WindowEventBus extends EventBus {
   protected uuidKey = "";
   store = new Store();
-  windowTransceivers = new WeakMap<Window, WindowTransceiver>();
+  windowTransceivers = new Map<Window, WindowTransceiver>();
   constructor(uuidKey: string) {
     super();
     this.uuidKey = uuidKey;
@@ -55,5 +55,10 @@ export default class WindowEventBus extends EventBus {
       }
     });
     return targets;
+  }
+  clearWindowTransceiver() {
+    this.windowTransceivers.forEach((transceiver) => {
+      this.removeWindowTransceiver(transceiver);
+    });
   }
 }

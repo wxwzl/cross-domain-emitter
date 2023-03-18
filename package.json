@@ -1,6 +1,6 @@
 {
   "name": "cross-domain-emitter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "a cross domain or carrier event emittier",
   "main": "dist/index.min.js",
   "module": "dist/index.esm.js",
