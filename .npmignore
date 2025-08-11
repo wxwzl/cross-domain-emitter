@@ -25,3 +25,5 @@ README.md
 tsconfig.json
 typedoc.json
 *.gif
+.husky
+tests
