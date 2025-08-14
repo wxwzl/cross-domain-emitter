@@ -27,3 +27,4 @@ typedoc.json
 *.gif
 .husky
 tests
+docs

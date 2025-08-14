@@ -29,7 +29,7 @@ export class WindowTransceiver extends BaseTransceiver {
   maxRetryTimes = 3;
   private retryTimes = -1;
   reconnectInterval = 500;
-  private timeOutId: NodeJS.Timer | null = null;
+  private timeOutId: NodeJS.Timeout | null = null;
   connectError: Error | undefined = undefined;
   private _messageHandlerWrap: null | EventListenerOrEventListenerObject = null;
   private connectedCall: Array<(error?: Error) => void> = [];

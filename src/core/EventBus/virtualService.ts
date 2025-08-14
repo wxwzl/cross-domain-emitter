@@ -17,7 +17,6 @@ export type ServiceCallBack = (
  * on: 接收 set 主动推送的数据变化
  * off: 停止接收set 主动推送的数据变化
  * destroy: 销毁
- * @export
  * @param {EventBus} instance
  * @param {string} eventName
  * @returns
