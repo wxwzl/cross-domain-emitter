@@ -1,15 +1,34 @@
 /** @type {import('@ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {
+  preset: "ts-jest",
+  testEnvironment: "jsdom",
   transform: {
-    //  用 `vue-jest` 处理 `*.vue` 文件
-    // "^.+\\.vue$": "vue-jest", //vuejest 处理.vue
-    "^.+\\.jsx?$": "babel-jest", // babel jest处理js or jsx
-    "^.+\\.tsx?$": "ts-jest", // ts-jest 处理.ts .tsx
-    nanoid: "babel-jest",
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        useESM: true,
+        tsconfig: {
+          allowJs: true,
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
+        },
+      },
+    ],
+    "^.+\\.jsx?$": "babel-jest",
   },
   testMatch: ["**/?(*.)+(spec).[jt]s?(x)"],
-  preset: "ts-jest",
-  testEnvironment: "node",
   collectCoverage: true,
   coverageReporters: ["json", "html"],
+  maxWorkers: 1,
+  workerIdleMemoryLimit: "512MB",
+  forceExit: true,
+  detectOpenHandles: true,
+  transformIgnorePatterns: ["node_modules/(?!(nanoid)/)"],
+  moduleNameMapper: {
+    "^src/(.*)$": "<rootDir>/src/$1",
+  },
+  extensionsToTreatAsEsm: [".ts"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
+  testTimeout: 30000,
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
 };

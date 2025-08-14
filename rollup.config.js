@@ -14,7 +14,7 @@ const outPutDir = getPath("dist");
 
 function cleanDir(dir) {
   if (fs.existsSync(dir)) {
-    fs.rmdirSync(dir, { recursive: true, force: true });
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 }
 cleanDir(outPutDir);
@@ -84,12 +84,6 @@ export default [
         exports: "auto",
         // sourcemap: true,
         // sourcemapFile: resolvePath("sourceMap"),
-      },
-      {
-        file: resolvePath(`index.min.umd.js`),
-        format: "umd",
-        exports: "auto",
-        name: libName,
       },
       {
         file: resolvePath(`index.min.umd.js`),

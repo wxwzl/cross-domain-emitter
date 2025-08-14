@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { WindowClient, createVirtualService, Store, SignalOption } from "../dist/index";
+import { WindowClient, createVirtualService, Store, SignalOption } from "../src/index";
 jest.setTimeout(500000);
 jest.mock("nanoid", () => ({
   nanoid: () => {

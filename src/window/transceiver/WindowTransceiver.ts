@@ -4,7 +4,7 @@ import BaseTransceiver, {
   TransceiverHandler,
 } from "../../core/transceiver/BaseTransceiver";
 import WindowSignal from "./WindowSignal";
-import { nanoid } from "nanoid";
+import { nanoid } from "../../utils/nanoid";
 /**
  * 接收器状态
  * 0 处于关闭状态，1处于打开状态，3 处于链接中状态，4：处于链接失败状态，只有处于打开状态才能可接收和发送数据

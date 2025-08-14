@@ -4,5 +4,6 @@
 **/dist/
 **/static/
 **/plugins/
-tests
-examples
+examples/
+tests/
+jest.setup.js

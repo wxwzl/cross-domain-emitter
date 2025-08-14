@@ -6,7 +6,7 @@ const { writeFileSync } = require("fs");
 const app = express();
 const port = 5001;
 app.use(express.static(path.join(__dirname, "../public")));
-app.use("/dist", express.static(path.join(__dirname, "../../../dist")));
+app.use("/dist", express.static(path.join(__dirname, "../../dist")));
 let ipStr = ip.address();
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

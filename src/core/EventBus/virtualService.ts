@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid";
+import { nanoid } from "../../utils/nanoid";
 import { SignalOption } from "../transceiver/BaseTransceiver";
 import { isFunction } from "../../utils/commonUtil";
 import EventBus from "./index";

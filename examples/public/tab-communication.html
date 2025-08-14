@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Communication Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message-form {
+            margin: 20px 0;
+        }
+        .message-form input, .message-form button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .message-form button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        .message-form button:hover {
+            background-color: #0056b3;
+        }
+        .messages {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: white;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .message.own {
+            border-left-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .message.other {
+            border-left-color: #ffc107;
+            background-color: #fffbf0;
+        }
+        .tab-info {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .instructions {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tab Communication Demo</h1>
+        
+        <div class="instructions">
+            <h3>使用说明：</h3>
+            <ol>
+                <li>打开这个页面</li>
+                <li>复制页面URL到新标签页打开</li>
+                <li>两个标签页之间就可以进行实时通信了</li>
+                <li>支持BroadcastChannel API的浏览器会使用BroadcastChannel，不支持的会回退到localStorage</li>
+            </ol>
+        </div>
+
+        <div class="tab-info">
+            <strong>当前Tab ID:</strong> <span id="tabId">加载中...</span><br>
+            <strong>通信状态:</strong> <span id="status" class="status disconnected">未连接</span><br>
+            <strong>BroadcastChannel支持:</strong> <span id="broadcastSupport">检测中...</span><br>
+            <strong>连接Tab数量:</strong> <span id="tabCount">0</span>
+        </div>
+
+        <div class="message-form">
+            <input type="text" id="messageInput" placeholder="输入消息内容" style="width: 300px;">
+            <button onclick="sendMessage()">发送到其他Tab</button>
+            <button onclick="sendToAllTabs()">发送到所有Tab</button>
+        </div>
+
+        <h3>消息记录</h3>
+        <div class="messages" id="messages"></div>
+    </div>
+
+    <script type="module">
+        // 这里需要先构建项目，然后引入构建后的文件
+        // 为了演示，我们创建一个简单的模拟实现
+        
+        // 模拟TabEventBus类
+        class MockTabEventBus {
+            constructor() {
+                this.listeners = {};
+                this.tabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                this.status = 'connected';
+                this.broadcastSupport = typeof BroadcastChannel !== 'undefined';
+                this.init();
+            }
+
+            init() {
+                // 更新UI
+                document.getElementById('tabId').textContent = this.tabId;
+                document.getElementById('status').textContent = this.status;
+                document.getElementById('status').className = 'status connected';
+                document.getElementById('broadcastSupport').textContent = this.broadcastSupport ? '支持' : '不支持';
+                document.getElementById('tabCount').textContent = '1';
+
+                // 监听storage事件（localStorage fallback）
+                window.addEventListener('storage', this.handleStorage.bind(this));
+                
+                // 发送连接通知
+                this.sendToOtherTabs('__tab_connected', { tabId: this.tabId });
+                
+                // 监听连接事件
+                this.on('__tab_connected', (data) => {
+                    this.addMessage(`Tab ${data.tabId} 已连接`, 'other');
+                    document.getElementById('tabCount').textContent = '2';
+                });
+                
+                this.on('__tab_disconnected', (data) => {
+                    this.addMessage(`Tab ${data.tabId} 已断开`, 'other');
+                    document.getElementById('tabCount').textContent = '1';
+                });
+            }
+
+            on(eventName, callback) {
+                if (!this.listeners[eventName]) {
+                    this.listeners[eventName] = [];
+                }
+                this.listeners[eventName].push(callback);
+            }
+
+            emit(eventName, data) {
+                if (this.listeners[eventName]) {
+                    this.listeners[eventName].forEach(callback => callback(data));
+                }
+            }
+
+            sendToOtherTabs(eventName, data) {
+                // 通过localStorage发送到其他tab
+                const message = {
+                    uuid: this.tabId,
+                    type: 'message',
+                    name: eventName,
+                    data: data,
+                    timestamp: Date.now()
+                };
+                
+                const key = `tab-comm_${Date.now()}_${Math.random()}`;
+                localStorage.setItem(key, JSON.stringify(message));
+                
+                // 清理消息
+                setTimeout(() => {
+                    localStorage.removeItem(key);
+                }, 100);
+            }
+
+            sendToAllTabs(eventName, data) {
+                // 先发送到当前tab
+                this.emit(eventName, data);
+                // 再发送到其他tab
+                this.sendToOtherTabs(eventName, data);
+            }
+
+            handleStorage(event) {
+                if (!event.newValue || !event.key?.startsWith('tab-comm_')) {
+                    return;
+                }
+
+                try {
+                    const message = JSON.parse(event.newValue);
+                    if (message.uuid !== this.tabId && message.type === 'message') {
+                        this.emit(message.name, message.data);
+                    }
+                } catch (error) {
+                    console.error('Failed to parse storage message:', error);
+                }
+            }
+
+            addMessage(text, type = 'own') {
+                const messagesDiv = document.getElementById('messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+                messageDiv.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+
+            stop() {
+                this.status = 'disconnected';
+                document.getElementById('status').textContent = this.status;
+                document.getElementById('status').className = 'status disconnected';
+            }
+        }
+
+        // 创建TabEventBus实例
+        const tabEventBus = new MockTabEventBus();
+
+        // 监听消息
+        tabEventBus.on('message', (data) => {
+            tabEventBus.addMessage(`收到消息: ${data}`, 'other');
+        });
+
+        // 全局函数
+        window.sendMessage = function() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                tabEventBus.sendToOtherTabs('message', message);
+                tabEventBus.addMessage(`发送到其他Tab: ${message}`, 'own');
+                input.value = '';
+            }
+        };
+
+        window.sendToAllTabs = function() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                tabEventBus.sendToAllTabs('message', message);
+                tabEventBus.addMessage(`发送到所有Tab: ${message}`, 'own');
+                input.value = '';
+            }
+        };
+
+        // 页面卸载时发送断开通知
+        window.addEventListener('beforeunload', () => {
+            tabEventBus.sendToOtherTabs('__tab_disconnected', { tabId: tabEventBus.tabId });
+        });
+
+        // 添加欢迎消息
+        tabEventBus.addMessage('Tab已启动，等待其他Tab连接...', 'own');
+    </script>
+</body>
+</html>

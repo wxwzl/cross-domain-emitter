@@ -1,5 +1,5 @@
 import { WindowTransceiver } from "../transceiver/WindowTransceiver";
-import { nanoid } from "nanoid";
+import { nanoid } from "../../utils/nanoid";
 import WindowEventBus from "../WindowEventBus";
 export interface AddIframeTransceiverOption {
   iframe: HTMLIFrameElement;

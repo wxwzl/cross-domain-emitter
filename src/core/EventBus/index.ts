@@ -1,7 +1,7 @@
 import BaseTransceiver, { Signal, SignalOption } from "../transceiver/BaseTransceiver";
 import { isArray, walkArray } from "../../utils/commonUtil";
 import EventEmitter from "@wxwzl/eventemitter";
-import { nanoid } from "nanoid";
+import { nanoid } from "../../utils/nanoid";
 
 export default class EventBus extends EventEmitter {
   id = nanoid();
@@ -107,7 +107,7 @@ export default class EventBus extends EventEmitter {
   }
   addEmitter(emiter: EventBus) {
     let flag = true;
-    walkArray(this.emitters, (target, index) => {
+    walkArray(this.emitters, (target) => {
       if (target === emiter) {
         flag = false;
         return true;

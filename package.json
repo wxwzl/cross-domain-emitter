@@ -11,8 +11,8 @@
     "lint": "eslint --fix **/*.{ts,jsx,js,vue} & npm run format",
     "format": "npx prettier --write .",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "test": "pnpm run build && npx jest",
-    "test:server": "cd ./tests/webserver && pnpm i && pnpm run dev",
+    "test": "npx jest",
+    "test:server": "cd ./examples && pnpm i && pnpm run dev",
     "prepublish": "pnpm run build",
     "prepare": "npx husky install",
     "docs": "typedoc"
