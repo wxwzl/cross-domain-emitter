@@ -3,19 +3,19 @@ import BaseTransceiver, { TransceiverHandler } from "../transceiver/BaseTranscei
 export function hingeJointTransceiver(
   transceiver: BaseTransceiver,
   transceiverHandler: TransceiverHandler & {
-    bindTransceiver: (transceiver: BaseTransceiver) => void;
+    addTransceiver: (transceiver: BaseTransceiver) => void;
   }
 ) {
   transceiver.addHandler(transceiverHandler);
-  transceiverHandler.bindTransceiver(transceiver);
+  transceiverHandler.addTransceiver(transceiver);
 }
 
 export function unHingeJointTransceiver(
   transceiver: BaseTransceiver,
   transceiverHandler: TransceiverHandler & {
-    unBindTransceiver: (transceiver: BaseTransceiver) => void;
+    removeTransceiver: (transceiver: BaseTransceiver) => void;
   }
 ) {
   transceiver.removeHandler(transceiverHandler);
-  transceiverHandler.unBindTransceiver(transceiver);
+  transceiverHandler.removeTransceiver(transceiver);
 }

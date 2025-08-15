@@ -1,7 +1,7 @@
 
 const eventBus =new  CrossDomainEmitter.EventBus();
 const transceiver = CrossDomainEmitter.createLocalStorageTransceiver({win:window,keyPrefix:"test-"});
-CrossDomainEmitter.hingeJointTransceiver(transceiver,eventBus)
+eventBus.bindTransceiver(transceiver)
 transceiver.start();
 const appName = document.getElementById("name").innerHTML;
 function getMessage(str){

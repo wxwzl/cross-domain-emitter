@@ -25,7 +25,7 @@ export class WindowTransceiver extends BaseTransceiver {
   allowHost: Array<string> | undefined = [];
   id = "";
   private uuidKey = "";
-  private uuidValue = "";
+  private uuidValue = ""; // 用于通信认证
   maxRetryTimes = 3;
   private retryTimes = -1;
   reconnectInterval = 500;

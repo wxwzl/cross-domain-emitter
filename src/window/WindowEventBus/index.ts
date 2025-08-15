@@ -2,7 +2,7 @@ import { hingeJointTransceiver, unHingeJointTransceiver } from "src/core/utils";
 import { walkArray } from "src/utils/commonUtil";
 import EventBus from "../../core/EventBus";
 import Store from "../../core/store";
-import BaseTransceiver, { TransceiverHandler } from "../../core/transceiver/BaseTransceiver";
+import BaseTransceiver from "../../core/transceiver/BaseTransceiver";
 import createWindowTransceiver, {
   createWindowTransceiverOption,
   WindowTransceiver,
@@ -23,8 +23,8 @@ export default class WindowEventBus extends EventBus {
     } else {
       transceiver = createWindowTransceiver(option);
       this.windowTransceivers.set(option.win, transceiver);
-      hingeJointTransceiver(transceiver, this);
-      hingeJointTransceiver(transceiver, this.store);
+      this.bindTransceiver(transceiver);
+      this.store.bindTransceiver(transceiver);
     }
     return transceiver;
   }
@@ -32,8 +32,8 @@ export default class WindowEventBus extends EventBus {
   removeWindowTransceiver(transceiver: WindowTransceiver) {
     transceiver.stop();
     this.windowTransceivers.delete(transceiver.context);
-    unHingeJointTransceiver(transceiver, this);
-    unHingeJointTransceiver(transceiver, this.store);
+    this.unBindTransceiver(transceiver);
+    this.store.unBindTransceiver(transceiver);
   }
 
   removeWindowTransceiverByWindow(win: Window) {

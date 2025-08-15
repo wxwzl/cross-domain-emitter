@@ -2,6 +2,7 @@ import BaseTransceiver, { SignalOption, SignalPart } from "../transceiver/BaseTr
 import { isArray, walkArray } from "../../utils/commonUtil";
 import EventEmitter from "@wxwzl/eventemitter";
 import { nanoid } from "../../utils/nanoid";
+import { hingeJointTransceiver, unHingeJointTransceiver } from "../utils";
 
 export default class EventBus extends EventEmitter {
   id = nanoid();
@@ -80,6 +81,9 @@ export default class EventBus extends EventEmitter {
   }
 
   bindTransceiver(transceiver: BaseTransceiver) {
+    hingeJointTransceiver(transceiver, this);
+  }
+  addTransceiver(transceiver: BaseTransceiver) {
     let flag = true;
     walkArray(this.transceivers, (target) => {
       if (target === transceiver) {
@@ -91,13 +95,16 @@ export default class EventBus extends EventEmitter {
       this.transceivers.push(transceiver);
     }
   }
-  unBindTransceiver(transceiver: BaseTransceiver) {
+  removeTransceiver(transceiver: BaseTransceiver) {
     walkArray(this.transceivers, (target, index) => {
       if (target === transceiver) {
         this.transceivers.splice(index, 1);
         return true;
       }
     });
+  }
+  unBindTransceiver(transceiver: BaseTransceiver) {
+    unHingeJointTransceiver(transceiver, this);
   }
   clearTransceiver() {
     this.transceivers = [];

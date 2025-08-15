@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tab Communication Demo</title>
+    <title>SameOrigin Communication Demo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -87,11 +87,57 @@
             margin: 20px 0;
             border: 1px solid #ffeaa7;
         }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .controls button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .controls button.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .controls button:disabled {
+            background-color: #6c757d;
+            color: #fff;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .controls button:disabled:hover {
+            background-color: #6c757d;
+            color: #fff;
+        }
+        .excellent {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .good {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .disconnected {
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Tab Communication Demo</h1>
+        <h1>SameOrigin Communication Demo</h1>
         
         <div class="instructions">
             <h3>使用说明：</h3>
@@ -100,6 +146,7 @@
                 <li>复制页面URL到新标签页打开</li>
                 <li>两个标签页之间就可以进行实时通信了</li>
                 <li>支持BroadcastChannel API的浏览器会使用BroadcastChannel，不支持的会回退到localStorage</li>
+                <li>可以手动切换通信方式，观察不同的通信效果</li>
             </ol>
         </div>
 
@@ -107,7 +154,19 @@
             <strong>当前Tab ID:</strong> <span id="tabId">加载中...</span><br>
             <strong>通信状态:</strong> <span id="status" class="status disconnected">未连接</span><br>
             <strong>BroadcastChannel支持:</strong> <span id="broadcastSupport">检测中...</span><br>
-            <strong>连接Tab数量:</strong> <span id="tabCount">0</span>
+            <strong>当前通信方式:</strong> <span id="transceiverType">检测中...</span><br>
+            <strong>连接质量:</strong> <span id="connectionQuality">检测中...</span><br>
+            <strong>最后活动:</strong> <span id="lastActivity">无</span>
+        </div>
+
+        <div class="controls">
+            <h4>通信控制</h4>
+            <button id="switchToBroadcast" onclick="switchToBroadcast()">切换到BroadcastChannel</button>
+            <button id="switchToLocalStorage" onclick="switchToLocalStorage()">切换到localStorage</button>
+            <button id="refreshConnection" onclick="refreshConnection()">刷新连接</button>
+            <button id="restartConnection" onclick="restartConnection()">重启连接</button>
+            <button id="testConnection" onclick="testConnection()" style="background-color: #28a745; color: white;">测试连接</button>
+            <button id="debugInfo" onclick="showDebugInfo()" style="background-color: #6c757d; color: white;">调试信息</button>
         </div>
 
         <div class="message-form">
@@ -120,152 +179,608 @@
         <div class="messages" id="messages"></div>
     </div>
 
-    <script type="module">
-        // 这里需要先构建项目，然后引入构建后的文件
-        // 为了演示，我们创建一个简单的模拟实现
+    <!-- 引入打包后的库文件 -->
+    <script src="../../dist/index.min.iife.js"></script>
+    
+    <script>
+        // 使用全局变量中的库
+        const { SameOriginEventBus, createSameOriginEventBus } = window.CrossDomainEmitter;
         
-        // 模拟TabEventBus类
-        class MockTabEventBus {
-            constructor() {
-                this.listeners = {};
-                this.tabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                this.status = 'connected';
-                this.broadcastSupport = typeof BroadcastChannel !== 'undefined';
-                this.init();
-            }
+        let sameOriginEventBus;
+        let currentTabId;
 
-            init() {
+        // 初始化
+        function init() {
+            try {
+                console.log('开始初始化...');
+                
+                // 检查库是否正确加载
+                if (!window.CrossDomainEmitter) {
+                    throw new Error('CrossDomainEmitter 未加载');
+                }
+                
+                console.log('库加载成功:', window.CrossDomainEmitter);
+                
+                // 检查SameOriginEventBus是否可用
+                if (!createSameOriginEventBus) {
+                    throw new Error('createSameOriginEventBus 不可用');
+                }
+                
+                // 创建SameOriginEventBus实例
+                sameOriginEventBus = createSameOriginEventBus({
+                    preferBroadcastChannel: true,
+                    channelName: 'demo-channel',
+                    keyPrefix: 'demo-'
+                });
+
+                console.log('SameOriginEventBus 创建成功:', sameOriginEventBus);
+
+                // 生成Tab ID（使用时间戳，因为这是示例）
+                currentTabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                console.log('当前Tab ID:', currentTabId);
+                
                 // 更新UI
-                document.getElementById('tabId').textContent = this.tabId;
-                document.getElementById('status').textContent = this.status;
-                document.getElementById('status').className = 'status connected';
-                document.getElementById('broadcastSupport').textContent = this.broadcastSupport ? '支持' : '不支持';
-                document.getElementById('tabCount').textContent = '1';
-
-                // 监听storage事件（localStorage fallback）
-                window.addEventListener('storage', this.handleStorage.bind(this));
+                updateUI();
                 
-                // 发送连接通知
-                this.sendToOtherTabs('__tab_connected', { tabId: this.tabId });
+                // 设置事件监听
+                setupEventListeners();
                 
-                // 监听连接事件
-                this.on('__tab_connected', (data) => {
-                    this.addMessage(`Tab ${data.tabId} 已连接`, 'other');
-                    document.getElementById('tabCount').textContent = '2';
-                });
+                // 添加欢迎消息
+                addMessage('SameOrigin通信已启动，等待其他Tab连接...', 'own');
                 
-                this.on('__tab_disconnected', (data) => {
-                    this.addMessage(`Tab ${data.tabId} 已断开`, 'other');
-                    document.getElementById('tabCount').textContent = '1';
-                });
-            }
-
-            on(eventName, callback) {
-                if (!this.listeners[eventName]) {
-                    this.listeners[eventName] = [];
-                }
-                this.listeners[eventName].push(callback);
-            }
-
-            emit(eventName, data) {
-                if (this.listeners[eventName]) {
-                    this.listeners[eventName].forEach(callback => callback(data));
-                }
-            }
-
-            sendToOtherTabs(eventName, data) {
-                // 通过localStorage发送到其他tab
-                const message = {
-                    uuid: this.tabId,
-                    type: 'message',
-                    name: eventName,
-                    data: data,
-                    timestamp: Date.now()
-                };
+                // 启动状态监控
+                startStatusMonitoring();
                 
-                const key = `tab-comm_${Date.now()}_${Math.random()}`;
-                localStorage.setItem(key, JSON.stringify(message));
+                console.log('SameOriginEventBus初始化成功');
                 
-                // 清理消息
-                setTimeout(() => {
-                    localStorage.removeItem(key);
-                }, 100);
-            }
-
-            sendToAllTabs(eventName, data) {
-                // 先发送到当前tab
-                this.emit(eventName, data);
-                // 再发送到其他tab
-                this.sendToOtherTabs(eventName, data);
-            }
-
-            handleStorage(event) {
-                if (!event.newValue || !event.key?.startsWith('tab-comm_')) {
-                    return;
-                }
-
-                try {
-                    const message = JSON.parse(event.newValue);
-                    if (message.uuid !== this.tabId && message.type === 'message') {
-                        this.emit(message.name, message.data);
-                    }
-                } catch (error) {
-                    console.error('Failed to parse storage message:', error);
-                }
-            }
-
-            addMessage(text, type = 'own') {
-                const messagesDiv = document.getElementById('messages');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${type}`;
-                messageDiv.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
-                messagesDiv.appendChild(messageDiv);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
-
-            stop() {
-                this.status = 'disconnected';
-                document.getElementById('status').textContent = this.status;
-                document.getElementById('status').className = 'status disconnected';
+            } catch (error) {
+                console.error('初始化失败:', error);
+                addMessage('初始化失败: ' + error.message, 'error');
+                showErrorDetails(error);
             }
         }
 
-        // 创建TabEventBus实例
-        const tabEventBus = new MockTabEventBus();
+        // 启动状态监控
+        function startStatusMonitoring() {
+            // 每2秒更新一次UI状态
+            setInterval(() => {
+                if (sameOriginEventBus) {
+                    updateUI();
+                    checkConnectionHealth();
+                }
+            }, 2000);
+        }
 
-        // 监听消息
-        tabEventBus.on('message', (data) => {
-            tabEventBus.addMessage(`收到消息: ${data}`, 'other');
+        // 检查连接健康状态
+        function checkConnectionHealth() {
+            if (!sameOriginEventBus) return;
+            
+            const isConnected = sameOriginEventBus.checkStatus();
+            const transceiverType = sameOriginEventBus.getCurrentTransceiverType();
+            
+            // 如果连接断开，尝试自动重连
+            if (!isConnected) {
+                console.log('检测到连接断开，尝试自动重连...');
+                addMessage('检测到连接断开，正在尝试重连...', 'error');
+                
+                setTimeout(() => {
+                    try {
+                        sameOriginEventBus.restart();
+                        addMessage('自动重连成功', 'own');
+                    } catch (error) {
+                        console.error('自动重连失败:', error);
+                        addMessage('自动重连失败: ' + error.message, 'error');
+                    }
+                }, 1000);
+            }
+        }
+
+        // 显示错误详情
+        function showErrorDetails(error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px solid #f5c6cb; font-family: monospace; white-space: pre-wrap;';
+            errorDiv.textContent = `错误详情:\n${error.stack || error.message}`;
+            document.getElementById('messages').appendChild(errorDiv);
+        }
+
+        // 更新UI
+        function updateUI() {
+            if (!sameOriginEventBus) return;
+            
+            try {
+                document.getElementById('tabId').textContent = currentTabId;
+                
+                const isConnected = sameOriginEventBus.checkStatus();
+                const statusElement = document.getElementById('status');
+                statusElement.textContent = isConnected ? '已连接' : '未连接';
+                statusElement.className = isConnected ? 'status connected' : 'status disconnected';
+                
+                document.getElementById('broadcastSupport').textContent = sameOriginEventBus.isBroadcastChannelSupported() ? '支持' : '不支持';
+                document.getElementById('transceiverType').textContent = sameOriginEventBus.getCurrentTransceiverType();
+                
+                // 更新连接质量
+                updateConnectionQuality();
+                
+                // 更新最后活动时间
+                updateLastActivity();
+                
+                // 更新按钮状态
+                updateButtonStates();
+                
+            } catch (error) {
+                console.error('更新UI失败:', error);
+            }
+        }
+
+        // 更新连接质量
+        function updateConnectionQuality() {
+            if (!sameOriginEventBus) return;
+            
+            const transceiverType = sameOriginEventBus.getCurrentTransceiverType();
+            const isConnected = sameOriginEventBus.checkStatus();
+            
+            let quality = '未知';
+            let qualityClass = '';
+            
+            if (isConnected) {
+                if (transceiverType === 'broadcastChannel') {
+                    quality = '优秀';
+                    qualityClass = 'excellent';
+                } else if (transceiverType === 'localStorage') {
+                    quality = '良好';
+                    qualityClass = 'good';
+                }
+            } else {
+                quality = '断开';
+                qualityClass = 'disconnected';
+            }
+            
+            const qualityElement = document.getElementById('connectionQuality');
+            qualityElement.textContent = quality;
+            qualityElement.className = qualityClass;
+        }
+
+        // 更新最后活动时间
+        function updateLastActivity() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('lastActivity').textContent = timeString;
+        }
+
+        // 更新按钮状态
+        function updateButtonStates() {
+            if (!sameOriginEventBus) return;
+            
+            const transceiverType = sameOriginEventBus.getCurrentTransceiverType();
+            const isConnected = sameOriginEventBus.checkStatus();
+            
+            // 根据当前状态启用/禁用按钮
+            document.getElementById('switchToBroadcast').disabled = transceiverType === 'broadcastChannel';
+            document.getElementById('switchToLocalStorage').disabled = transceiverType === 'localStorage';
+            document.getElementById('refreshConnection').disabled = !isConnected;
+            document.getElementById('restartConnection').disabled = !isConnected;
+            
+            // 更新按钮样式
+            document.getElementById('switchToBroadcast').className = transceiverType === 'broadcastChannel' ? 'controls button active' : 'controls button';
+            document.getElementById('switchToLocalStorage').className = transceiverType === 'localStorage' ? 'controls button active' : 'controls button';
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            if (!sameOriginEventBus) return;
+            
+            console.log('设置事件监听器...');
+            
+            // 监听消息
+            sameOriginEventBus.on('message', (data) => {
+                console.log('收到消息:', data);
+                addMessage(`收到消息: ${data}`, 'other');
+                
+                // 显示消息通知
+                showMessageNotification(data);
+            });
+
+            // 监听Tab连接事件
+            sameOriginEventBus.onTabConnected((tabId) => {
+                console.log('Tab连接事件:', tabId);
+                addMessage(`Tab ${tabId} 已连接`, 'other');
+                updateUI();
+                
+                // 显示连接通知
+                showConnectionNotification('连接', tabId);
+            });
+
+            // 监听Tab断开事件
+            sameOriginEventBus.onTabDisconnected((tabId) => {
+                console.log('Tab断开事件:', tabId);
+                addMessage(`Tab ${tabId} 已断开`, 'other');
+                updateUI();
+                
+                // 显示断开通知
+                showConnectionNotification('断开', tabId);
+            });
+            
+            console.log('事件监听器设置完成');
+        }
+
+        // 显示消息通知
+        function showMessageNotification(data) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('收到新消息', {
+                    body: `来自其他Tab: ${data}`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        // 显示连接状态通知
+        function showConnectionNotification(type, tabId) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(`Tab ${type}`, {
+                    body: `Tab ${tabId} 已${type}`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        // 请求通知权限
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // 添加消息到界面
+        function addMessage(text, type = 'own') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // 发送消息到其他Tab
+        function sendMessage() {
+            if (!sameOriginEventBus) {
+                addMessage('SameOriginEventBus 未初始化', 'error');
+                return;
+            }
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                try {
+                    console.log('发送消息到其他Tab:', message);
+                    console.log('当前通信方式:', sameOriginEventBus.getCurrentTransceiverType());
+                    console.log('连接状态:', sameOriginEventBus.checkStatus());
+                    
+                    // 添加发送状态指示
+                    const sendButton = document.querySelector('button[onclick="sendMessage()"]');
+                    const originalText = sendButton.textContent;
+                    sendButton.textContent = '发送中...';
+                    sendButton.disabled = true;
+                    
+                    sameOriginEventBus.sendToOtherTabs('message', message);
+                    addMessage(`发送到其他Tab: ${message}`, 'own');
+                    input.value = '';
+                    
+                    console.log('消息发送成功');
+                    
+                    // 恢复按钮状态
+                    setTimeout(() => {
+                        sendButton.textContent = originalText;
+                        sendButton.disabled = false;
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('发送失败:', error);
+                    addMessage(`发送失败: ${error.message}`, 'error');
+                    
+                    // 恢复按钮状态
+                    const sendButton = document.querySelector('button[onclick="sendMessage()"]');
+                    sendButton.textContent = '发送到其他Tab';
+                    sendButton.disabled = false;
+                }
+            }
+        }
+
+        // 发送消息到所有Tab
+        function sendToAllTabs() {
+            if (!sameOriginEventBus) {
+                addMessage('SameOriginEventBus 未初始化', 'error');
+                return;
+            }
+            
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (message) {
+                try {
+                    console.log('发送消息到所有Tab:', message);
+                    
+                    // 添加发送状态指示
+                    const sendButton = document.querySelector('button[onclick="sendToAllTabs()"]');
+                    const originalText = sendButton.textContent;
+                    sendButton.textContent = '发送中...';
+                    sendButton.disabled = true;
+                    
+                    sameOriginEventBus.sendToAllTabs('message', message);
+                    addMessage(`发送到所有Tab: ${message}`, 'own');
+                    input.value = '';
+                    
+                    console.log('消息发送成功');
+                    
+                    // 恢复按钮状态
+                    setTimeout(() => {
+                        sendButton.textContent = originalText;
+                        sendButton.disabled = false;
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('发送失败:', error);
+                    addMessage(`发送失败: ${error.message}`, 'error');
+                    
+                    // 恢复按钮状态
+                    const sendButton = document.querySelector('button[onclick="sendToAllTabs()"]');
+                    sendButton.textContent = '发送到所有Tab';
+                    sendButton.disabled = false;
+                }
+            }
+        }
+
+        // 切换到BroadcastChannel
+        function switchToBroadcast() {
+            if (!sameOriginEventBus) {
+                addMessage('SameOriginEventBus 未初始化', 'error');
+                return;
+            }
+            
+            try {
+                if (sameOriginEventBus.isBroadcastChannelSupported()) {
+                    const success = sameOriginEventBus.switchToBroadcastChannel();
+                    if (success) {
+                        addMessage('已切换到BroadcastChannel', 'own');
+                        updateUI();
+                    } else {
+                        addMessage('切换到BroadcastChannel失败', 'error');
+                    }
+                } else {
+                    addMessage('当前浏览器不支持BroadcastChannel', 'error');
+                }
+            } catch (error) {
+                addMessage(`切换失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 切换到localStorage
+        function switchToLocalStorage() {
+            if (!sameOriginEventBus) {
+                addMessage('SameOriginEventBus 未初始化', 'error');
+                return;
+            }
+            
+            try {
+                const success = sameOriginEventBus.switchToLocalStorage();
+                if (success) {
+                    addMessage('已切换到localStorage', 'own');
+                    updateUI();
+                } else {
+                    addMessage('切换到localStorage失败', 'error');
+                }
+            } catch (error) {
+                addMessage(`切换失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 刷新连接
+        function refreshConnection() {
+            if (!sameOriginEventBus) {
+                addMessage('SameOriginEventBus 未初始化', 'error');
+                return;
+            }
+            
+            try {
+                sameOriginEventBus.refreshConnection();
+                addMessage('连接已刷新', 'own');
+                updateUI();
+            } catch (error) {
+                addMessage(`刷新失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 重启连接
+        function restartConnection() {
+            if (!sameOriginEventBus) {
+                addMessage('SameOriginEventBus 未初始化', 'error');
+                return;
+            }
+            
+            try {
+                sameOriginEventBus.restart();
+                addMessage('连接已重启', 'own');
+                updateUI();
+            } catch (error) {
+                addMessage(`重启失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试连接
+        function testConnection() {
+            try {
+                console.log('=== 开始连接测试 ===');
+                
+                // 检查库加载
+                console.log('CrossDomainEmitter 可用:', !!window.CrossDomainEmitter);
+                
+                // 检查实例
+                console.log('SameOriginEventBus 实例:', !!sameOriginEventBus);
+                
+                if (sameOriginEventBus) {
+                    // 检查通信方式
+                    const transceiverType = sameOriginEventBus.getCurrentTransceiverType();
+                    console.log('当前通信方式:', transceiverType);
+                    
+                    // 检查连接状态
+                    const isConnected = sameOriginEventBus.checkStatus();
+                    console.log('连接状态:', isConnected);
+                    
+                    // 检查BroadcastChannel支持
+                    const broadcastSupported = sameOriginEventBus.isBroadcastChannelSupported();
+                    console.log('BroadcastChannel支持:', broadcastSupported);
+                    
+                    
+                    // 发送测试消息
+                    console.log('发送测试消息...');
+                    sameOriginEventBus.sendToOtherTabs('test', '这是一条测试消息');
+                    
+                    addMessage('连接测试完成，请查看控制台', 'own');
+                } else {
+                    addMessage('SameOriginEventBus 实例不存在', 'error');
+                }
+                
+                console.log('=== 连接测试完成 ===');
+                
+            } catch (error) {
+                console.error('测试失败:', error);
+                addMessage(`测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示调试信息
+        function showDebugInfo() {
+            try {
+                let debugInfo = '=== 调试信息 ===\n';
+                
+                // 基本信息
+                debugInfo += `当前时间: ${new Date().toLocaleString()}\n`;
+                debugInfo += `当前Tab ID: ${currentTabId}\n`;
+                debugInfo += `页面URL: ${window.location.href}\n`;
+                debugInfo += `协议: ${window.location.protocol}\n`;
+                debugInfo += `主机: ${window.location.host}\n`;
+                debugInfo += `路径: ${window.location.pathname}\n`;
+                
+                // 库信息
+                debugInfo += `CrossDomainEmitter 可用: ${!!window.CrossDomainEmitter}\n`;
+                
+                if (sameOriginEventBus) {
+                    debugInfo += `SameOriginEventBus 实例: 存在\n`;
+                    debugInfo += `通信方式: ${sameOriginEventBus.getCurrentTransceiverType()}\n`;
+                    debugInfo += `连接状态: ${sameOriginEventBus.checkStatus()}\n`;
+                    debugInfo += `BroadcastChannel支持: ${sameOriginEventBus.isBroadcastChannelSupported()}\n`;
+                } else {
+                    debugInfo += `SameOriginEventBus 实例: 不存在\n`;
+                }
+                
+                // localStorage信息
+                try {
+                    const testKey = 'debug_test_' + Date.now();
+                    localStorage.setItem(testKey, 'test');
+                    localStorage.removeItem(testKey);
+                    debugInfo += `localStorage 可用: 是\n`;
+                } catch (e) {
+                    debugInfo += `localStorage 可用: 否 (${e.message})\n`;
+                }
+                
+                // BroadcastChannel信息
+                try {
+                    if (typeof BroadcastChannel !== 'undefined') {
+                        debugInfo += `BroadcastChannel 原生支持: 是\n`;
+                    } else {
+                        debugInfo += `BroadcastChannel 原生支持: 否\n`;
+                    }
+                } catch (e) {
+                    debugInfo += `BroadcastChannel 原生支持: 否 (${e.message})\n`;
+                }
+                
+                // 检查导出的模块
+                if (window.CrossDomainEmitter) {
+                    debugInfo += `\n导出的模块:\n`;
+                    Object.keys(window.CrossDomainEmitter).forEach(key => {
+                        debugInfo += `  - ${key}\n`;
+                    });
+                }
+                
+                debugInfo += '=== 调试信息结束 ===';
+                
+                console.log(debugInfo);
+                addMessage('调试信息已输出到控制台', 'own');
+                
+                // 在页面上也显示一些关键信息
+                const debugDiv = document.createElement('div');
+                debugDiv.style.cssText = 'background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap;';
+                debugDiv.textContent = debugInfo;
+                document.getElementById('messages').appendChild(debugDiv);
+                
+            } catch (error) {
+                console.error('显示调试信息失败:', error);
+                addMessage(`显示调试信息失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            // 请求通知权限
+            requestNotificationPermission();
+            
+            // 等待一小段时间确保库完全加载
+            setTimeout(() => {
+                // 检查库是否加载成功
+                if (window.CrossDomainEmitter) {
+                    console.log('库加载成功，开始初始化...');
+                    init();
+                } else {
+                    console.error('库加载失败');
+                    addMessage('库加载失败，请检查dist目录下的文件', 'error');
+                    
+                    // 显示重试按钮
+                    showRetryButton();
+                }
+            }, 100);
         });
 
-        // 全局函数
-        window.sendMessage = function() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            if (message) {
-                tabEventBus.sendToOtherTabs('message', message);
-                tabEventBus.addMessage(`发送到其他Tab: ${message}`, 'own');
-                input.value = '';
-            }
-        };
-
-        window.sendToAllTabs = function() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            if (message) {
-                tabEventBus.sendToAllTabs('message', message);
-                tabEventBus.addMessage(`发送到所有Tab: ${message}`, 'own');
-                input.value = '';
-            }
-        };
+        // 显示重试按钮
+        function showRetryButton() {
+            const retryDiv = document.createElement('div');
+            retryDiv.style.cssText = 'text-align: center; margin: 20px 0;';
+            
+            const retryButton = document.createElement('button');
+            retryButton.textContent = '重试加载库';
+            retryButton.style.cssText = 'padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;';
+            retryButton.onclick = () => {
+                retryDiv.remove();
+                addMessage('正在重试加载库...', 'own');
+                setTimeout(() => {
+                    if (window.CrossDomainEmitter) {
+                        addMessage('库加载成功，开始初始化...', 'own');
+                        init();
+                    } else {
+                        addMessage('重试失败，请刷新页面', 'error');
+                        showRetryButton();
+                    }
+                }, 1000);
+            };
+            
+            retryDiv.appendChild(retryButton);
+            document.getElementById('messages').appendChild(retryDiv);
+        }
 
         // 页面卸载时发送断开通知
         window.addEventListener('beforeunload', () => {
-            tabEventBus.sendToOtherTabs('__tab_disconnected', { tabId: tabEventBus.tabId });
+            if (sameOriginEventBus) {
+                try {
+                    sameOriginEventBus.sendToOtherTabs('__tab_disconnected', { tabId: currentTabId });
+                } catch (error) {
+                    console.error('发送断开通知失败:', error);
+                }
+            }
         });
 
-        // 添加欢迎消息
-        tabEventBus.addMessage('Tab已启动，等待其他Tab连接...', 'own');
+        // 键盘快捷键
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && document.activeElement === document.getElementById('messageInput')) {
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>

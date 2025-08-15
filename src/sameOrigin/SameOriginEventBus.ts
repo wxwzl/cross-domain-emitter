@@ -88,6 +88,9 @@ export default class SameOriginEventBus extends EventBus {
     return this.transceiver.getCurrentTransceiverType();
   }
 
+  isBroadcastChannelSupported(): boolean {
+    return SameOriginTransceiver.isBroadcastChannelSupported();
+  }
   /**
    * 切换到BroadcastChannel（如果支持）
    */
