@@ -274,7 +274,7 @@ interface CreateWindowTransceiverOption {
 
 **主窗口**
 ```
-const  userInfoService = createVirtualService("useInfo");
+const  userInfoService = createVirtualService(eventbus，"useInfo");
 // 监听子窗口发起的获取用户信息
 userInfoService.on((resolve)=>{
   // 获取用户信息，可以是异步操作
@@ -285,7 +285,7 @@ userInfoService.on((resolve)=>{
 **子窗口**
 
 ```
-const  userInfoService = createVirtualService("useInfo");
+const  userInfoService = createVirtualService(eventbus，"useInfo");
 
 // 主动向主窗口获取用户信息
 userInfoService.get().then((data)=>{
