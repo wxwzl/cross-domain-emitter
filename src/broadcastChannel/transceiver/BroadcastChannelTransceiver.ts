@@ -1,6 +1,6 @@
-import { BaseTransceiver, SignalOption, TransceiverHandler } from "../../core";
+import { nanoid } from "src/utils/nanoid";
+import { BaseTransceiver, Signal, SignalOption, TransceiverHandler } from "../../core";
 import { walkArray } from "../../utils/commonUtil";
-import BroadcastChannelSignal from "./BroadcastChannelSignal";
 
 enum Status {
   close = 0,
@@ -18,7 +18,6 @@ export interface CreateBroadcastChannelTransceiverOption {
 export class BroadcastChannelTransceiver extends BaseTransceiver {
   status: Status = Status.close;
   handlers: Array<TransceiverHandler> = [];
-  context: Window = window;
   channelName: string;
   filter: BroadcastFilter | undefined = undefined;
   uuid: string;
@@ -26,13 +25,12 @@ export class BroadcastChannelTransceiver extends BaseTransceiver {
 
   constructor(option: CreateBroadcastChannelTransceiverOption) {
     super();
-    this.context = option.win;
     this.filter = option.filter;
     this.channelName = option.channelName || "cross-domain-emitter-broadcast-channel";
-    this.uuid = new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
+    this.uuid = nanoid();
 
     // 创建BroadcastChannel
-    this.broadcastChannel = new (this.context as any).BroadcastChannel(this.channelName);
+    this.broadcastChannel = new BroadcastChannel(this.channelName);
   }
 
   private messageHandler(event: MessageEvent) {
@@ -43,8 +41,8 @@ export class BroadcastChannelTransceiver extends BaseTransceiver {
     try {
       const data = event.data;
       if (data && typeof data === "object" && data.uuid !== this.uuid) {
-        const signal = new BroadcastChannelSignal(data.uuid, data.name, data.data, data.option);
-
+        const signal = new Signal(data.uuid, data.name, data.data, data.option);
+        signal.timestamp = data.timestamp;
         walkArray<TransceiverHandler>(this.handlers, (handler) => {
           handler.onMessage(signal);
         });
@@ -135,16 +133,8 @@ export class BroadcastChannelTransceiver extends BaseTransceiver {
   /**
    * 检查BroadcastChannel是否可用
    */
-  isBroadcastChannelSupported(): boolean {
-    return typeof (this.context as any).BroadcastChannel !== "undefined";
-  }
-
-  /**
-   * 获取当前连接的tab数量（估算）
-   */
-  getConnectedTabCount(): number {
-    // BroadcastChannel无法直接获取连接数，返回估算值
-    return 1;
+  static isBroadcastChannelSupported(): boolean {
+    return typeof BroadcastChannel !== "undefined";
   }
 }
 

@@ -1,6 +1,6 @@
-import { BaseTransceiver, SignalOption, TransceiverHandler } from "../../core";
+import { nanoid } from "nanoid";
+import { BaseTransceiver, Signal, SignalOption, TransceiverHandler } from "../../core";
 import { walkArray } from "../../utils/commonUtil";
-import LocalStorageSignal from "./LocalStorageSignal";
 enum Status {
   close = 0,
   open = 1,
@@ -20,7 +20,7 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     if (option.keyPrefix) {
       this.keyPrefix = option.keyPrefix;
     }
-    this.uuid = new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
+    this.uuid = nanoid();
   }
   isValidName(eventName: string) {
     if (!this.keyPrefix || (eventName && eventName.indexOf(this.keyPrefix) === 0)) {
@@ -32,7 +32,6 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     return name.replace(this.keyPrefix, "");
   }
   messageHandler(event: StorageEvent) {
-    console.log("event:", event);
     const eventName = event.key as string;
     const data = this.context.localStorage.getItem(eventName);
     if (!data) {
@@ -40,7 +39,8 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     }
     if (this.isValidName(eventName)) {
       const realName = this.getRealName(eventName);
-      const signal = LocalStorageSignal.deserialize(realName, data);
+      const signal = Signal.deserialize(data);
+      signal.name = realName;
       if (signal.uuid !== this.uuid) {
         if (!this.filter || this.filter(event)) {
           walkArray<TransceiverHandler>(this.handlers, (handler) => {
@@ -53,7 +53,7 @@ export class LocalStorageTransceiver extends BaseTransceiver {
   }
   send(eventName: string, data?: unknown, option?: SignalOption) {
     const name = this.getEventName(eventName);
-    const str = new LocalStorageSignal(this.uuid, eventName, data, option).serialize();
+    const str = new Signal(this.uuid, eventName, data, option).serialize();
     this.context.localStorage.setItem(name, str);
     return this;
   }

@@ -20,6 +20,7 @@ babel.config.js
 CHANGELOG.md
 commitlint.config.js
 jest.config.js
+jest.setup.js
 pnpm-lock.yaml
 README.md
 tsconfig.json
@@ -28,3 +29,4 @@ typedoc.json
 .husky
 tests
 docs
+examples

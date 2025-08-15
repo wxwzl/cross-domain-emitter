@@ -1,9 +1,9 @@
 import { isFunction, isObject, isString, walkArray } from "../../utils/commonUtil";
 import BaseTransceiver, {
+  Signal,
   SignalOption,
   TransceiverHandler,
 } from "../../core/transceiver/BaseTransceiver";
-import WindowSignal from "./WindowSignal";
 import { nanoid } from "../../utils/nanoid";
 /**
  * 接收器状态
@@ -55,13 +55,13 @@ export class WindowTransceiver extends BaseTransceiver {
       this.host === event.origin ||
       this.host === "*"
     ) {
-      let signal: null | WindowSignal = null;
+      let signal: null | Signal = null;
       if (isString(event.data)) {
-        signal = WindowSignal.deserialize(event.data);
+        signal = Signal.deserialize(event.data);
       } else if (isObject(event.data) && event.data.name) {
-        signal = WindowSignal.copyFrom(event.data);
+        signal = Signal.copyFrom(event.data);
       }
-      if (isObject<WindowSignal>(signal) && signal._uuid === this.uuidValue) {
+      if (isObject<Signal>(signal) && signal.uuid === this.uuidValue) {
         if (signal.name === "connect") {
           this.send("connected");
           return;
@@ -76,7 +76,7 @@ export class WindowTransceiver extends BaseTransceiver {
         signal.option.event = event;
         signal.option.transceiver = this;
         walkArray<TransceiverHandler>(this.handlers, (handler) => {
-          handler.onMessage(signal as WindowSignal);
+          handler.onMessage(signal as Signal);
         });
       }
     }
@@ -89,14 +89,11 @@ export class WindowTransceiver extends BaseTransceiver {
     if (this.status === Status.close) {
       return this;
     }
-    if ((window as any).structuredClone != undefined) {
-      this.context.postMessage(
-        new WindowSignal(this.uuidValue, eventName, data, option),
-        this.host
-      );
+    if (window.structuredClone != undefined) {
+      this.context.postMessage(new Signal(this.uuidValue, eventName, data, option), this.host);
     } else {
       this.context.postMessage(
-        new WindowSignal(this.uuidValue, eventName, data, {
+        new Signal(this.uuidValue, eventName, data, {
           ...option,
           transceiver: undefined,
           event: undefined,
@@ -203,7 +200,7 @@ export class WindowTransceiver extends BaseTransceiver {
     this.excuteConnectedCall(this.connectError);
     this.resetProperties();
   }
-  private onConnected(callBack: (error?: Error) => void) {
+  onConnected(callBack: (error?: Error) => void) {
     switch (this.status) {
       case Status.open:
         callBack();

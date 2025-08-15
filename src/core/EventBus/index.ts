@@ -1,4 +1,4 @@
-import BaseTransceiver, { Signal, SignalOption } from "../transceiver/BaseTransceiver";
+import BaseTransceiver, { SignalOption, SignalPart } from "../transceiver/BaseTransceiver";
 import { isArray, walkArray } from "../../utils/commonUtil";
 import EventEmitter from "@wxwzl/eventemitter";
 import { nanoid } from "../../utils/nanoid";
@@ -102,7 +102,7 @@ export default class EventBus extends EventEmitter {
   clearTransceiver() {
     this.transceivers = [];
   }
-  onMessage(data: Signal) {
+  onMessage(data: SignalPart) {
     super.emit(data.name, data.data, data.option);
   }
   addEmitter(emiter: EventBus) {

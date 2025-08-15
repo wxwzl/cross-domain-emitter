@@ -5,6 +5,7 @@ import {
   BroadcastChannelTransceiver,
   createBroadcastChannelTransceiver,
 } from "../../broadcastChannel";
+import { nanoid } from "src/utils/nanoid";
 
 enum Status {
   close = 0,
@@ -14,7 +15,7 @@ enum Status {
 export type SameOriginFilter = (event: Event | MessageEvent) => boolean;
 
 export interface CreateSameOriginTransceiverOption {
-  win: Window;
+  win?: Window;
   filter?: SameOriginFilter;
   channelName?: string;
   keyPrefix?: string;
@@ -38,11 +39,13 @@ export class SameOriginTransceiver extends BaseTransceiver {
 
   constructor(option: CreateSameOriginTransceiverOption) {
     super();
-    this.context = option.win;
+    if (option.win) {
+      this.context = option.win;
+    }
     this.filter = option.filter;
     this.channelName = option.channelName || "cross-domain-emitter-same-origin";
     this.keyPrefix = option.keyPrefix || "same-origin-";
-    this.uuid = new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
+    this.uuid = nanoid();
     this.preferBroadcastChannel = option.preferBroadcastChannel ?? true;
 
     this.initializeTransceivers();
@@ -50,7 +53,7 @@ export class SameOriginTransceiver extends BaseTransceiver {
 
   private initializeTransceivers() {
     // 检查BroadcastChannel支持并创建（如果支持）
-    if (this.isBroadcastChannelSupported()) {
+    if (SameOriginTransceiver.isBroadcastChannelSupported()) {
       this.broadcastChannelTransceiver = createBroadcastChannelTransceiver({
         win: this.context,
         filter: this.filter ? (event) => this.filter!(event) : undefined,
@@ -60,7 +63,7 @@ export class SameOriginTransceiver extends BaseTransceiver {
       // 如果优先使用BroadcastChannel，直接选择它
       if (this.preferBroadcastChannel) {
         this.currentTransceiver = this.broadcastChannelTransceiver;
-        console.log("使用BroadcastChannel进行同域通信");
+        // console.log("使用BroadcastChannel进行同域通信");
         return;
       }
     }
@@ -73,11 +76,11 @@ export class SameOriginTransceiver extends BaseTransceiver {
     });
 
     this.currentTransceiver = this.localStorageTransceiver;
-    console.log("使用localStorage进行同域通信");
+    // console.log("使用localStorage进行同域通信");
   }
 
-  private isBroadcastChannelSupported(): boolean {
-    return typeof (this.context as any).BroadcastChannel !== "undefined";
+  static isBroadcastChannelSupported(): boolean {
+    return BroadcastChannelTransceiver.isBroadcastChannelSupported();
   }
 
   send(eventName: string, data?: unknown, option?: SignalOption) {
@@ -169,7 +172,7 @@ export class SameOriginTransceiver extends BaseTransceiver {
    * 切换到BroadcastChannel（如果支持）
    */
   switchToBroadcastChannel(): boolean {
-    if (this.isBroadcastChannelSupported() && this.broadcastChannelTransceiver) {
+    if (SameOriginTransceiver.isBroadcastChannelSupported() && this.broadcastChannelTransceiver) {
       this.currentTransceiver = this.broadcastChannelTransceiver;
       if (this.status === Status.open) {
         this.broadcastChannelTransceiver.start();
@@ -197,21 +200,6 @@ export class SameOriginTransceiver extends BaseTransceiver {
       this.localStorageTransceiver.start();
     }
     return true;
-  }
-
-  /**
-   * 获取连接的tab数量
-   */
-  getConnectedTabCount(): number {
-    if (
-      this.currentTransceiver === this.broadcastChannelTransceiver &&
-      this.broadcastChannelTransceiver
-    ) {
-      return this.broadcastChannelTransceiver.getConnectedTabCount();
-    } else {
-      // localStorage无法准确获取连接数
-      return 1;
-    }
   }
 }
 

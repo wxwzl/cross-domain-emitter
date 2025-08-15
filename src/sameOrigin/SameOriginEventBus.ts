@@ -101,21 +101,6 @@ export default class SameOriginEventBus extends EventBus {
   switchToLocalStorage(): boolean {
     return this.transceiver.switchToLocalStorage();
   }
-
-  /**
-   * 检查BroadcastChannel是否可用
-   */
-  isBroadcastChannelSupported(): boolean {
-    return typeof (window as any).BroadcastChannel !== "undefined";
-  }
-
-  /**
-   * 获取当前连接的tab数量
-   */
-  getConnectedTabCount(): number {
-    return this.transceiver.getConnectedTabCount();
-  }
-
   /**
    * 检查通信状态
    */

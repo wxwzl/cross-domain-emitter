@@ -1,4 +1,8 @@
-import { SameOriginEventBus, createSameOriginEventBus } from "../src/sameOrigin";
+import {
+  SameOriginEventBus,
+  SameOriginTransceiver,
+  createSameOriginEventBus,
+} from "../src/sameOrigin";
 
 describe("SameOriginEventBus", () => {
   let sameOriginEventBus: SameOriginEventBus;
@@ -13,7 +17,6 @@ describe("SameOriginEventBus", () => {
 
   test("should create SameOriginEventBus instance", () => {
     expect(sameOriginEventBus).toBeInstanceOf(SameOriginEventBus);
-    expect(sameOriginEventBus.isBroadcastChannelSupported()).toBeDefined();
   });
 
   test("should send and receive messages locally", (done) => {
@@ -29,19 +32,14 @@ describe("SameOriginEventBus", () => {
 
   test("should send messages to other tabs only", () => {
     const testData = { message: "Hello to other tabs" };
-    let localReceived = false;
-
-    sameOriginEventBus.on("test-event", (data) => {
-      if (data === testData) {
-        localReceived = true;
-      }
-    });
+    const callback = jest.fn();
+    sameOriginEventBus.on("test-event", callback);
 
     // 发送到其他tab（不包括当前tab）
     sameOriginEventBus.sendToOtherTabs("test-event", testData);
 
     // 由于没有其他tab，消息不会在本地触发
-    expect(localReceived).toBe(false);
+    expect(callback).not.toHaveBeenCalled();
   });
 
   test("should handle tab connection events", (done) => {
@@ -104,7 +102,7 @@ describe("SameOriginEventBus", () => {
   test("should switch transceiver types", () => {
     const initialType = sameOriginEventBus.getCurrentTransceiverType();
 
-    if (sameOriginEventBus.isBroadcastChannelSupported()) {
+    if (SameOriginTransceiver.isBroadcastChannelSupported()) {
       // 测试切换到BroadcastChannel
       const switched = sameOriginEventBus.switchToBroadcastChannel();
       if (switched) {
@@ -122,11 +120,5 @@ describe("SameOriginEventBus", () => {
     const initialStatus = sameOriginEventBus.checkStatus();
     sameOriginEventBus.refreshConnection();
     expect(sameOriginEventBus.checkStatus()).toBe(initialStatus);
-  });
-
-  test("should get connected tab count", () => {
-    const count = sameOriginEventBus.getConnectedTabCount();
-    expect(typeof count).toBe("number");
-    expect(count).toBeGreaterThan(0);
   });
 });
