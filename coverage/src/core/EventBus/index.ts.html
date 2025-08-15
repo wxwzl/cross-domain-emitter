@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">55.69% </span>
+                <span class="strong">58.33% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>44/79</span>
+                <span class='fraction'>49/84</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">35.71% </span>
+                <span class="strong">43.75% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/14</span>
+                <span class='fraction'>7/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">54.66% </span>
+                <span class="strong">57.5% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>41/75</span>
+                <span class='fraction'>46/80</span>
             </div>
         
             
@@ -191,15 +191,23 @@
 <a name='L126'></a><a href='#L126'>126</a>
 <a name='L127'></a><a href='#L127'>127</a>
 <a name='L128'></a><a href='#L128'>128</a>
-<a name='L129'></a><a href='#L129'>129</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -273,24 +281,30 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
-<span class="cline-any cline-yes">15x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">15x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -319,10 +333,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import BaseTransceiver, { Signal, SignalOption } from "../transceiver/BaseTransceiver";
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import BaseTransceiver, { SignalOption, SignalPart } from "../transceiver/BaseTransceiver";
 import { isArray, walkArray } from "../../utils/commonUtil";
 import EventEmitter from "@wxwzl/eventemitter";
-import { nanoid } from "nanoid";
+import { nanoid } from "../../utils/nanoid";
+import { hingeJointTransceiver, unHingeJointTransceiver } from "../utils";
 &nbsp;
 export default class EventBus extends EventEmitter {
   id = nanoid();
@@ -401,6 +416,9 @@ export default class EventBus extends EventEmitter {
   }
 &nbsp;
   bindTransceiver(transceiver: BaseTransceiver) {
+    hingeJointTransceiver(transceiver, this);
+  }
+  addTransceiver(transceiver: BaseTransceiver) {
     let flag = true;
     walkArray(this.transceivers, <span class="fstat-no" title="function not covered" >(t</span>arget) =&gt; {
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (target === transceiver) {</span>
@@ -412,7 +430,7 @@ export default class EventBus extends EventEmitter {
       this.transceivers.push(transceiver);
     }
   }
-  unBindTransceiver(transceiver: BaseTransceiver) {
+  removeTransceiver(transceiver: BaseTransceiver) {
     walkArray(this.transceivers, (target, index) =&gt; {
       if (target === transceiver) {
         this.transceivers.splice(index, 1);
@@ -420,15 +438,18 @@ export default class EventBus extends EventEmitter {
       }
     });
   }
+  unBindTransceiver(transceiver: BaseTransceiver) {
+    unHingeJointTransceiver(transceiver, this);
+  }
 <span class="fstat-no" title="function not covered" >  clearTransceiver(</span>) {
 <span class="cstat-no" title="statement not covered" >    this.transceivers = [];</span>
   }
-<span class="fstat-no" title="function not covered" >  onMessage(</span>data: Signal) {
+<span class="fstat-no" title="function not covered" >  onMessage(</span>data: SignalPart) {
 <span class="cstat-no" title="statement not covered" >    super.emit(data.name, data.data, data.option);</span>
   }
 <span class="fstat-no" title="function not covered" >  addEmitter(</span>emiter: EventBus) {
     let flag = <span class="cstat-no" title="statement not covered" >true;</span>
-<span class="cstat-no" title="statement not covered" >    walkArray(this.emitters, <span class="fstat-no" title="function not covered" >(t</span>arget, index) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    walkArray(this.emitters, <span class="fstat-no" title="function not covered" >(t</span>arget) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (target === emiter) {</span>
 <span class="cstat-no" title="statement not covered" >        flag = false;</span>
 <span class="cstat-no" title="statement not covered" >        return true;</span>
@@ -454,7 +475,7 @@ export default class EventBus extends EventEmitter {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-14T11:13:39.546Z
+                at 2025-08-15T08:42:47.842Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

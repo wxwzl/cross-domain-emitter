@@ -94,7 +94,7 @@ export class LocalStorageTransceiver extends BaseTransceiver {
     });
   }
   checkStatus(): boolean {
-    return !!this.context;
+    return this.status === Status.open && !!this.context;
   }
   readHistoryMessage() {
     const storage = this.context.localStorage;

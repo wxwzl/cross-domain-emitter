@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">22.75% </span>
+                <span class="strong">22.22% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>33/145</span>
+                <span class='fraction'>32/144</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.98% </span>
+                <span class="strong">21.42% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>31/141</span>
+                <span class='fraction'>30/140</span>
             </div>
         
             
@@ -294,15 +294,12 @@
 <a name='L229'></a><a href='#L229'>229</a>
 <a name='L230'></a><a href='#L230'>230</a>
 <a name='L231'></a><a href='#L231'>231</a>
-<a name='L232'></a><a href='#L232'>232</a>
-<a name='L233'></a><a href='#L233'>233</a>
-<a name='L234'></a><a href='#L234'>234</a>
-<a name='L235'></a><a href='#L235'>235</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L232'></a><a href='#L232'>232</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -390,9 +387,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -533,11 +527,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { isFunction, isObject, isString, walkArray } from "../../utils/commonUtil";
 import BaseTransceiver, {
+  Signal,
   SignalOption,
   TransceiverHandler,
 } from "../../core/transceiver/BaseTransceiver";
-import WindowSignal from "./WindowSignal";
-import { nanoid } from "nanoid";
+import { nanoid } from "../../utils/nanoid";
 /**
  * 接收器状态
  * 0 处于关闭状态，1处于打开状态，3 处于链接中状态，4：处于链接失败状态，只有处于打开状态才能可接收和发送数据
@@ -558,7 +552,7 @@ export class WindowTransceiver extends BaseTransceiver {
 <span class="cstat-no" title="statement not covered" >  allowHost: Array&lt;string&gt; | undefined = [];</span>
 <span class="cstat-no" title="statement not covered" >  id = "";</span>
   private <span class="cstat-no" title="statement not covered" >uuidKey = "";</span>
-  private <span class="cstat-no" title="statement not covered" >uuidValue = "";</span>
+  private <span class="cstat-no" title="statement not covered" >uuidValue = ""; </span>// 用于通信认证
 <span class="cstat-no" title="statement not covered" >  maxRetryTimes = 3;</span>
   private <span class="cstat-no" title="statement not covered" >retryTimes = -1;</span>
 <span class="cstat-no" title="statement not covered" >  reconnectInterval = 500;</span>
@@ -588,13 +582,13 @@ export class WindowTransceiver extends BaseTransceiver {
       this.host === event.origin ||
       this.host === "*"
     ) {
-      let signal: null | WindowSignal = <span class="cstat-no" title="statement not covered" >null;</span>
+      let signal: null | Signal = <span class="cstat-no" title="statement not covered" >null;</span>
 <span class="cstat-no" title="statement not covered" >      if (isString(event.data)) {</span>
-<span class="cstat-no" title="statement not covered" >        signal = WindowSignal.deserialize(event.data);</span>
+<span class="cstat-no" title="statement not covered" >        signal = Signal.deserialize(event.data);</span>
       } else <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (isObject(event.data) &amp;&amp; event.data.name) {</span>
-<span class="cstat-no" title="statement not covered" >        signal = WindowSignal.copyFrom(event.data);</span>
+<span class="cstat-no" title="statement not covered" >        signal = Signal.copyFrom(event.data);</span>
       }
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isObject&lt;WindowSignal&gt;(signal) &amp;&amp; signal._uuid === this.uuidValue) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (isObject&lt;Signal&gt;(signal) &amp;&amp; signal.uuid === this.uuidValue) {</span>
 <span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (signal.name === "connect") {</span>
 <span class="cstat-no" title="statement not covered" >          this.send("connected");</span>
 <span class="cstat-no" title="statement not covered" >          return;</span>
@@ -609,7 +603,7 @@ export class WindowTransceiver extends BaseTransceiver {
 <span class="cstat-no" title="statement not covered" >        signal.option.event = event;</span>
 <span class="cstat-no" title="statement not covered" >        signal.option.transceiver = this;</span>
 <span class="cstat-no" title="statement not covered" >        walkArray&lt;TransceiverHandler&gt;(this.handlers, <span class="fstat-no" title="function not covered" >(h</span>andler) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          handler.onMessage(signal as WindowSignal);</span>
+<span class="cstat-no" title="statement not covered" >          handler.onMessage(signal as Signal);</span>
         });
       }
     }
@@ -622,14 +616,11 @@ export class WindowTransceiver extends BaseTransceiver {
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.status === Status.close) {</span>
 <span class="cstat-no" title="statement not covered" >      return this;</span>
     }
-<span class="cstat-no" title="statement not covered" >    if ((window as any).structuredClone != undefined) {</span>
-<span class="cstat-no" title="statement not covered" >      this.context.postMessage(</span>
-        new WindowSignal(this.uuidValue, eventName, data, option),
-        this.host
-      );
+<span class="cstat-no" title="statement not covered" >    if (window.structuredClone != undefined) {</span>
+<span class="cstat-no" title="statement not covered" >      this.context.postMessage(new Signal(this.uuidValue, eventName, data, option), this.host);</span>
     } else {
 <span class="cstat-no" title="statement not covered" >      this.context.postMessage(</span>
-        new WindowSignal(this.uuidValue, eventName, data, {
+        new Signal(this.uuidValue, eventName, data, {
           ...option,
           transceiver: undefined,
           event: undefined,
@@ -736,7 +727,7 @@ export class WindowTransceiver extends BaseTransceiver {
 <span class="cstat-no" title="statement not covered" >    this.excuteConnectedCall(this.connectError);</span>
 <span class="cstat-no" title="statement not covered" >    this.resetProperties();</span>
   }
-<span class="fstat-no" title="function not covered" >  private o</span>nConnected(callBack: (error?: Error) =&gt; void) {
+<span class="fstat-no" title="function not covered" >  onConnected(</span>callBack: (error?: Error) =&gt; void) {
 <span class="cstat-no" title="statement not covered" >    switch (this.status) {</span>
       case Status.open:
 <span class="cstat-no" title="statement not covered" >        callBack();</span>
@@ -772,7 +763,7 @@ export default function <span class="fstat-no" title="function not covered" >cre
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-14T11:13:39.546Z
+                at 2025-08-15T08:42:47.842Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

@@ -16,13 +16,6 @@
 
   - `接入主文档的应用可以在以iframe形式接入和以直接挂载dom方式接入之间进行无缝切换。与主文档通信的相关事件分发代码不变。`
 
-## 架构设计
-
-项目采用模块化设计，每个通信方式都有独立的模块：
-
-- **`localStorage`**: 基于localStorage的同域跨窗口通信
-- **`messageChannel`**: 基于BroadcastChannel API的同域Tab间通信（仅支持BroadcastChannel的浏览器）
-- **`sameOrigin`**: 整合localStorage和BroadcastChannel的同域通信模块，自动选择最佳通信方式
 
 ## usage
 
@@ -83,7 +76,6 @@ if (sameOriginEventBus.isBroadcastChannelSupported()) {
 import { BroadcastChannelTransceiver, createBroadcastChannelTransceiver } from "cross-domain-emitter";
 
 const broadcastChannelTransceiver = createBroadcastChannelTransceiver({
-  win: window,
   channelName: 'my-channel'
 });
 
@@ -99,7 +91,6 @@ broadcastChannelTransceiver.send('event', 'data');
 import { LocalStorageTransceiver, createLocalStorageTransceiver } from "cross-domain-emitter";
 
 const localStorageTransceiver = createLocalStorageTransceiver({
-  win: window,
   keyPrefix: 'my-app-'
 });
 ```
@@ -169,20 +160,10 @@ transceiver.onConnected((error) => {
 - `switchToBroadcastChannel()`: 切换到BroadcastChannel
 - `switchToLocalStorage()`: 切换到localStorage
 - `isBroadcastChannelSupported()`: 检查BroadcastChannel支持
-- `getConnectedTabCount()`: 获取连接Tab数量
 - `checkStatus()`: 检查通信状态
 - `stop()`: 停止通信
 - `restart()`: 重新启动通信
 - `refreshConnection()`: 强制刷新连接
-
-### BroadcastChannelTransceiver
-
-专门用于BroadcastChannel API的收发器类。
-
-#### 主要方法
-
-- `isBroadcastChannelSupported()`: 检查BroadcastChannel支持
-- `getConnectedTabCount()`: 获取连接Tab数量
 
 ## examples
 
@@ -192,15 +173,13 @@ transceiver.onConnected((error) => {
 
 ### 同域通信演示
 
-在 `examples/same-origin-communication-example.ts` 中提供了完整的使用示例，包括：
+在 `examples/public/tab-communication.html` 中提供了完整的使用示例，包括：
 
 1. **基本通信**: 创建和配置SameOriginEventBus
 2. **强制localStorage**: 强制使用localStorage进行通信
 3. **动态切换**: 运行时切换通信方式
 4. **消息过滤**: 自定义消息过滤器
-5. **多频道通信**: 创建多个独立通信频道
-6. **错误处理**: 连接状态监控和自动重连
-7. **实际应用**: 购物车同步等实际场景
+57. **实际应用**: 购物车同步,用户信息同步，账户金额等数字同步等实际场景
 
 ### 测试
 

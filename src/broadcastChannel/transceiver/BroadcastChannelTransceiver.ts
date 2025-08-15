@@ -10,7 +10,6 @@ enum Status {
 export type BroadcastFilter = (event: MessageEvent) => boolean;
 
 export interface CreateBroadcastChannelTransceiverOption {
-  win: Window;
   filter?: BroadcastFilter;
   channelName?: string;
 }
@@ -75,7 +74,10 @@ export class BroadcastChannelTransceiver extends BaseTransceiver {
   }
 
   start() {
-    if (this.status === Status.close && this.broadcastChannel) {
+    if (this.status === Status.close) {
+      if (!this.broadcastChannel) {
+        this.broadcastChannel = new BroadcastChannel(this.channelName);
+      }
       this.status = Status.open;
 
       // 设置消息处理器

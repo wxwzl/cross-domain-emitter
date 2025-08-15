@@ -1,16 +1,10 @@
-import { BaseTransceiver, SignalOption, TransceiverHandler } from "../../core";
-import { walkArray } from "../../utils/commonUtil";
+import { SignalOption, TransceiverHandler } from "../../core";
 import { LocalStorageTransceiver, createLocalStorageTransceiver } from "../../localStorage";
 import {
   BroadcastChannelTransceiver,
   createBroadcastChannelTransceiver,
 } from "../../broadcastChannel";
 import { nanoid } from "src/utils/nanoid";
-
-enum Status {
-  close = 0,
-  open = 1,
-}
 
 export type SameOriginFilter = (event: Event | MessageEvent) => boolean;
 
@@ -19,29 +13,33 @@ export interface CreateSameOriginTransceiverOption {
   filter?: SameOriginFilter;
   channelName?: string;
   keyPrefix?: string;
-  preferBroadcastChannel?: boolean; // 是否优先使用BroadcastChannel
+  preferBroadcastChannel?: boolean;
+}
+export enum TransceiverType {
+  broadcastChannel = 0,
+  localStorage = 1,
 }
 
-export class SameOriginTransceiver extends BaseTransceiver {
-  status: Status = Status.close;
-  handlers: Array<TransceiverHandler> = [];
-  context: Window = window;
-  channelName: string;
-  keyPrefix: string;
-  filter: SameOriginFilter | undefined = undefined;
-  uuid: string;
-  preferBroadcastChannel: boolean;
+export class SameOriginTransceiver {
+  private context: Window;
+  private filter?: SameOriginFilter;
+  private channelName: string;
+  private keyPrefix: string;
+  private uuid: string;
+  private preferBroadcastChannel: boolean;
 
   // 通信方式
-  localStorageTransceiver: LocalStorageTransceiver | null = null;
-  broadcastChannelTransceiver: BroadcastChannelTransceiver | null = null;
-  currentTransceiver: BaseTransceiver | null = null;
+  private localStorageTransceiver: LocalStorageTransceiver | null = null;
+  private broadcastChannelTransceiver: BroadcastChannelTransceiver | null = null;
+  public currentTransceiver: LocalStorageTransceiver | BroadcastChannelTransceiver | null = null;
+  private currentType: TransceiverType = TransceiverType.localStorage;
+
+  // 状态管理
+  private isStarted = false;
+  private handlers: TransceiverHandler[] = [];
 
   constructor(option: CreateSameOriginTransceiverOption) {
-    super();
-    if (option.win) {
-      this.context = option.win;
-    }
+    this.context = option.win || window;
     this.filter = option.filter;
     this.channelName = option.channelName || "cross-domain-emitter-same-origin";
     this.keyPrefix = option.keyPrefix || "same-origin-";
@@ -52,154 +50,164 @@ export class SameOriginTransceiver extends BaseTransceiver {
   }
 
   private initializeTransceivers() {
-    // 检查BroadcastChannel支持并创建（如果支持）
-    if (SameOriginTransceiver.isBroadcastChannelSupported()) {
+    // 优先创建BroadcastChannel（如果支持且优先）
+    if (SameOriginTransceiver.isBroadcastChannelSupported() && this.preferBroadcastChannel) {
       this.broadcastChannelTransceiver = createBroadcastChannelTransceiver({
-        win: this.context,
-        filter: this.filter ? (event) => this.filter!(event) : undefined,
+        filter: this.filter,
         channelName: this.channelName,
       });
-
-      // 如果优先使用BroadcastChannel，直接选择它
-      if (this.preferBroadcastChannel) {
-        this.currentTransceiver = this.broadcastChannelTransceiver;
-        // console.log("使用BroadcastChannel进行同域通信");
-        return;
-      }
+      this.currentTransceiver = this.broadcastChannelTransceiver;
+      this.currentType = TransceiverType.broadcastChannel;
+      return;
     }
 
-    // 如果不支持BroadcastChannel或优先使用localStorage，创建localStorage收发器
+    // 回退到localStorage
     this.localStorageTransceiver = createLocalStorageTransceiver({
       win: this.context,
-      filter: this.filter ? (event) => this.filter!(event) : undefined,
+      filter: this.filter,
       keyPrefix: this.keyPrefix,
     });
-
     this.currentTransceiver = this.localStorageTransceiver;
-    // console.log("使用localStorage进行同域通信");
+    this.currentType = TransceiverType.localStorage;
+  }
+
+  // 公共方法
+  send(eventName: string, data?: unknown, option?: SignalOption) {
+    if (!this.isStarted || !this.currentTransceiver) return this;
+    this.currentTransceiver.send(eventName, data, option);
+    return this;
+  }
+
+  start() {
+    if (this.isStarted) return this;
+
+    this.isStarted = true;
+    if (this.currentTransceiver) {
+      this.currentTransceiver.start();
+    }
+    return this;
+  }
+
+  stop() {
+    if (!this.isStarted) return this;
+
+    this.isStarted = false;
+    if (this.currentTransceiver) {
+      this.currentTransceiver.stop();
+    }
+    return this;
+  }
+
+  restart() {
+    this.stop();
+    this.start();
+    return this;
+  }
+
+  // 处理器管理
+  addHandler(handler: TransceiverHandler) {
+    if (this.handlers.includes(handler)) return this;
+
+    this.handlers.push(handler);
+    if (this.currentTransceiver) {
+      this.currentTransceiver.addHandler(handler);
+    }
+    return this;
+  }
+
+  removeHandler(handler: TransceiverHandler) {
+    const index = this.handlers.indexOf(handler);
+    if (index > -1) {
+      this.handlers.splice(index, 1);
+      if (this.currentTransceiver) {
+        this.currentTransceiver.removeHandler(handler);
+      }
+    }
+    return this;
+  }
+
+  clearHandler() {
+    this.handlers = [];
+    if (this.currentTransceiver) {
+      this.currentTransceiver.clearHandler();
+    }
+    return this;
+  }
+
+  // 状态查询
+  checkStatus(): boolean {
+    return this.isStarted && !!this.currentTransceiver?.checkStatus();
+  }
+
+  getCurrentTransceiverType(): TransceiverType {
+    return this.currentType;
   }
 
   static isBroadcastChannelSupported(): boolean {
     return BroadcastChannelTransceiver.isBroadcastChannelSupported();
   }
 
-  send(eventName: string, data?: unknown, option?: SignalOption) {
-    if (this.status !== Status.open || !this.currentTransceiver) {
-      return this;
-    }
-
-    return this.currentTransceiver.send(eventName, data, option);
-  }
-
-  start() {
-    if (this.status === Status.close) {
-      this.status = Status.open;
-
-      // 启动当前收发器
-      if (this.currentTransceiver) {
-        this.currentTransceiver.start();
-      }
-    }
-  }
-
-  stop() {
-    if (this.status === Status.open) {
-      this.status = Status.close;
-
-      // 停止当前收发器
-      if (this.currentTransceiver) {
-        this.currentTransceiver.stop();
-      }
-    }
-  }
-
-  clearHandler() {
-    this.handlers = [];
-
-    // 清理当前收发器
-    if (this.currentTransceiver) {
-      this.currentTransceiver.clearHandler();
-    }
-  }
-
-  addHandler(handler: TransceiverHandler) {
-    let flag = true;
-    walkArray(this.handlers, (target) => {
-      if (target === handler) {
-        flag = false;
-        return true;
-      }
-    });
-    if (flag) {
-      this.handlers.push(handler);
-
-      // 添加到当前收发器
-      if (this.currentTransceiver) {
-        this.currentTransceiver.addHandler(handler);
-      }
-    }
-  }
-
-  removeHandler(handler: TransceiverHandler) {
-    walkArray(this.handlers, (target, index) => {
-      if (target === handler) {
-        this.handlers.splice(index, 1);
-        return true;
-      }
-    });
-
-    // 从当前收发器移除
-    if (this.currentTransceiver) {
-      this.currentTransceiver.removeHandler(handler);
-    }
-  }
-
-  checkStatus(): boolean {
-    return this.status === Status.open && !!this.currentTransceiver;
-  }
-
-  /**
-   * 获取当前使用的通信方式
-   */
-  getCurrentTransceiverType(): "broadcastChannel" | "localStorage" {
-    if (this.currentTransceiver === this.broadcastChannelTransceiver) {
-      return "broadcastChannel";
-    }
-    return "localStorage";
-  }
-
-  /**
-   * 切换到BroadcastChannel（如果支持）
-   */
+  // 通信方式切换
   switchToBroadcastChannel(): boolean {
-    if (SameOriginTransceiver.isBroadcastChannelSupported() && this.broadcastChannelTransceiver) {
-      this.currentTransceiver = this.broadcastChannelTransceiver;
-      if (this.status === Status.open) {
-        this.broadcastChannelTransceiver.start();
-      }
-      return true;
+    if (!SameOriginTransceiver.isBroadcastChannelSupported()) return false;
+
+    // 如果已经是BroadcastChannel，无需切换
+    if (this.currentType === TransceiverType.broadcastChannel) return true;
+
+    // 创建BroadcastChannel收发器（如果不存在）
+    if (!this.broadcastChannelTransceiver) {
+      this.broadcastChannelTransceiver = createBroadcastChannelTransceiver({
+        filter: this.filter,
+        channelName: this.channelName,
+      });
     }
-    return false;
+
+    // 切换收发器
+    this.switchTransceiver(this.broadcastChannelTransceiver, TransceiverType.broadcastChannel);
+    return true;
   }
 
-  /**
-   * 切换到localStorage
-   */
   switchToLocalStorage(): boolean {
-    // 如果localStorage收发器不存在，创建它
+    // 如果已经是localStorage，无需切换
+    if (this.currentType === TransceiverType.localStorage) return true;
+
+    // 创建localStorage收发器（如果不存在）
     if (!this.localStorageTransceiver) {
       this.localStorageTransceiver = createLocalStorageTransceiver({
         win: this.context,
-        filter: this.filter ? (event) => this.filter!(event) : undefined,
+        filter: this.filter,
         keyPrefix: this.keyPrefix,
       });
     }
 
-    this.currentTransceiver = this.localStorageTransceiver;
-    if (this.status === Status.open) {
-      this.localStorageTransceiver.start();
-    }
+    // 切换收发器
+    this.switchTransceiver(this.localStorageTransceiver, TransceiverType.localStorage);
     return true;
+  }
+
+  private switchTransceiver(
+    newTransceiver: LocalStorageTransceiver | BroadcastChannelTransceiver,
+    newType: TransceiverType
+  ) {
+    // 停止当前收发器
+    if (this.currentTransceiver && this.isStarted) {
+      this.currentTransceiver.stop();
+      this.currentTransceiver.clearHandler();
+    }
+
+    // 切换到新收发器
+    this.currentTransceiver = newTransceiver;
+    this.currentType = newType;
+
+    // 重新添加所有处理器
+    this.handlers.forEach((handler) => {
+      newTransceiver.addHandler(handler);
+    });
+
+    // 如果已启动，启动新收发器
+    if (this.isStarted) {
+      newTransceiver.start();
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import {
   SameOriginEventBus,
   SameOriginTransceiver,
+  TransceiverType,
   createSameOriginEventBus,
 } from "../src/sameOrigin";
 
@@ -96,24 +97,26 @@ describe("SameOriginEventBus", () => {
 
   test("should get current transceiver type", () => {
     const transceiverType = sameOriginEventBus.getCurrentTransceiverType();
-    expect(["broadcastChannel", "localStorage"]).toContain(transceiverType);
+    expect([TransceiverType.broadcastChannel, TransceiverType.localStorage]).toContain(
+      transceiverType
+    );
   });
 
   test("should switch transceiver types", () => {
-    const initialType = sameOriginEventBus.getCurrentTransceiverType();
-
     if (SameOriginTransceiver.isBroadcastChannelSupported()) {
       // 测试切换到BroadcastChannel
       const switched = sameOriginEventBus.switchToBroadcastChannel();
       if (switched) {
-        expect(sameOriginEventBus.getCurrentTransceiverType()).toBe("broadcastChannel");
+        expect(sameOriginEventBus.getCurrentTransceiverType()).toBe(
+          TransceiverType.broadcastChannel
+        );
       }
     }
 
     // 测试切换到localStorage
     const switchedToLocalStorage = sameOriginEventBus.switchToLocalStorage();
     expect(switchedToLocalStorage).toBe(true);
-    expect(sameOriginEventBus.getCurrentTransceiverType()).toBe("localStorage");
+    expect(sameOriginEventBus.getCurrentTransceiverType()).toBe(TransceiverType.localStorage);
   });
 
   test("should refresh connection", () => {

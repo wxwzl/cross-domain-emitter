@@ -1,8 +1,10 @@
+import { BaseTransceiver } from "src/core";
 import EventBus from "../core/EventBus";
 import {
   SameOriginTransceiver,
   createSameOriginTransceiver,
   SameOriginFilter,
+  TransceiverType,
 } from "./transceiver/SameOriginTransceiver";
 
 export interface CreateSameOriginEventBusOption {
@@ -32,7 +34,7 @@ export default class SameOriginEventBus extends EventBus {
     });
 
     // 绑定收发器
-    this.bindTransceiver(this.transceiver);
+    this.bindTransceiver(this.transceiver.currentTransceiver as BaseTransceiver);
 
     // 启动收发器
     this.transceiver.start();
@@ -84,7 +86,7 @@ export default class SameOriginEventBus extends EventBus {
   /**
    * 获取当前使用的通信方式
    */
-  getCurrentTransceiverType(): "broadcastChannel" | "localStorage" {
+  getCurrentTransceiverType(): TransceiverType {
     return this.transceiver.getCurrentTransceiverType();
   }
 
@@ -94,15 +96,27 @@ export default class SameOriginEventBus extends EventBus {
   /**
    * 切换到BroadcastChannel（如果支持）
    */
-  switchToBroadcastChannel(): boolean {
-    return this.transceiver.switchToBroadcastChannel();
+  switchToBroadcastChannel() {
+    const oldTransceiver = this.transceiver.currentTransceiver as BaseTransceiver;
+    if (this.transceiver.switchToBroadcastChannel()) {
+      this.unBindTransceiver(oldTransceiver);
+      this.bindTransceiver(this.transceiver.currentTransceiver as BaseTransceiver);
+      return true;
+    }
+    return false;
   }
 
   /**
    * 切换到localStorage
    */
-  switchToLocalStorage(): boolean {
-    return this.transceiver.switchToLocalStorage();
+  switchToLocalStorage() {
+    const oldTransceiver = this.transceiver.currentTransceiver as BaseTransceiver;
+    if (this.transceiver.switchToLocalStorage()) {
+      this.unBindTransceiver(oldTransceiver);
+      this.bindTransceiver(this.transceiver.currentTransceiver as BaseTransceiver);
+      return true;
+    }
+    return false;
   }
   /**
    * 检查通信状态
@@ -116,15 +130,14 @@ export default class SameOriginEventBus extends EventBus {
    */
   stop() {
     this.transceiver.stop();
-    this.unBindTransceiver(this.transceiver);
+    this.unBindTransceiver(this.transceiver.currentTransceiver as BaseTransceiver);
   }
 
   /**
    * 重新启动同域通信
    */
   restart() {
-    this.transceiver.start();
-    this.bindTransceiver(this.transceiver);
+    this.transceiver.restart();
   }
 
   /**
